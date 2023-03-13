@@ -22,8 +22,7 @@ class Engine{
                 - Drag
                 - Release (Releasing Drag)
 
-            Engine and Selected Objects
-            - Key Events 
+            ! No Need Keyevents (since this is a mobile game)
 
             Engine Only
             - Tick Events
