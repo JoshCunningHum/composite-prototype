@@ -1,3 +1,4 @@
+import { GameObject } from '../adapter.mjs';
 import Event from './event.mjs';
 import {
     update as TweenUpdate,
@@ -32,8 +33,6 @@ class Engine{
             
     */
 
-    constructor(scene, )
-
     static _init(){
 
         this.$last_tick = Date.now();
@@ -43,12 +42,18 @@ class Engine{
     scene;
     
 
-
+    
     events = [];
 
-    static addEvent(type, callback){
+    /**
+     * 
+     * @param {String} type the type of event
+     * @param {Function} callback what will happen if the event is fired, binded to the object the event is binded to
+     * @returns 
+     */
+    static addEvent(type, callback, target = this){
         // returns the ID of the event
-        const e = new Event(type, callback);
+        const e = new Event(type, callback, target);
         this.events.push(e);
         return e.id;
     }
@@ -59,9 +64,23 @@ class Engine{
         this.events.splice(index, 1);
     }
 
+    /**
+     * What happens in each tick of the game
+     */
+    static tick(){
+        // (re)draw objects
+        this.draw(this.scene);
+
+        // check events
+
+        // fire triggered events
+    }
+
     // used for rendering, renders all objects
     static draw(parent){
-
+        // recursive function
+        if(parent instanceof GameObject) parent.draw();
+        if(parent.children.length > 0) parent.children.forEach(o => this.draw(o));
     }
 
     delta = 0;
@@ -76,7 +95,7 @@ class Engine{
         this.$last_tick = now; 
 
         // Drawing objects
-        this.draw(this.scene);
+        this.tick();
 
         // Update all tweens
         TweenUpdate(this.delta);
