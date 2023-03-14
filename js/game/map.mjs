@@ -4,9 +4,9 @@ import { GameObject } from "../adapter.mjs";
 class Block extends GameObject{
     static typeData = [];
     static get types(){
-        return this.typeData.reduce((obj, type) => {
-            obj[type.label] = type;
-        }, {})
+        const o = {};
+        this.typeData.forEach(type => o[type.label] = type);
+        return o;
     }
 
     mx;
@@ -119,7 +119,7 @@ class Block extends GameObject{
     }
 }
 
-class Map{
+class Map extends GameObject{
 
     static gen(){
         // Do backtracking here
@@ -133,7 +133,7 @@ class Map{
         }
 
         const def_map = [
-            "_*________",
+            "_8________",
             "_*_****___",
             "_*_*__*___",
             "_***__*___",
@@ -145,12 +145,14 @@ class Map{
             "______O___",
         ];
 
-
-
+        // TODO: Add initialization of blocks
+        return def_map;
     }
 
     width = 500;
     height = 500;
+
+    // TODO: Create positioning for the map (Extend as another GameObject)
 
     // TODO: Create setter and getters for updating 
     cs = 10;
@@ -166,7 +168,9 @@ class Map{
     get rows(){return this.rs};
     get cols(){return this.cs};
 
-    data = [];
+
+    // TODO: Change structure to one dimensional array
+    children = [];
 
     /**
      * 
@@ -182,16 +186,23 @@ class Map{
         this.rows = rows;
     }
 
+    get blockWidth(){
+        return this.width / this.cols;
+    }
+
+    get blockHeight(){
+        return this.height / this.rows;
+    }
+
     get blockSize(){
-        return [this.width / this.cols, this.height / this.rows];
+        return [this.blockWidth, this.blockHeight];
     }
 
     get cellCoords(){
         // returns an array of coordinates for each block (center), should be in relative of the map
-        const [bX, bY] = this.blockSize,
-              [hX, hY] = [bX / 2, bY / 2];
+        const [bX, bY] = this.blockSize;
 
-        return this.mapCell(cell => [cell.mapX * bX + hX, cell.mapY * bY + hY]);
+        return this.mapCell(cell => [cell.mapX * bX, cell.mapY * bY]);
     }
 
     /**
@@ -199,7 +210,7 @@ class Map{
      * @param {Function} callback A callback on what you want to do with the cells
      */
     loopCell(callback){
-        this.data.forEach((row, r) => {
+        this.children.forEach((row, r) => {
             row.forEach((cell, c) => callback(cell, r, c));
         })
     }
@@ -210,8 +221,14 @@ class Map{
      * @returns A mapped array (2 Dimensional)
      */
     mapCell(callback){
-        return this.data.map((row, r) => {
+        return this.children.map((row, r) => {
             return row.map((cell, c) => callback(cell, r, c));
+        })
+    }
+    
+    findCell(callback){
+        return this.children.find(row => {
+            return row.find(cell => callback(cell));
         })
     }
 
@@ -326,11 +343,13 @@ class Map{
         }
 
         // If the same existing block is already in the map, cancel
-        if(this.data[y][x])
+        if(this.children[y][x].equals(block)) return;
+
         // change map data
-        this.data[y][x] = block;
-        // change blocks coordinate too
+        this.children[y][x] = block;
+        // change blocks properties
         block.mapPos = [x, y];
+        block.position.set(block.mapX * this.blockWidth, block.mapY * this.blockWidth);
     }
 
     /**
@@ -341,7 +360,7 @@ class Map{
      */
     getAt(x, y){
         if(x > this.cols || y > this.rows || x < 0 || y < 0) return null;
-        return this.data[y][x];
+        return this.children[y][x];
     }
 
 }

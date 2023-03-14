@@ -1,6 +1,6 @@
 // Import all needed classes and add it to the window for usage in non-module files
 
-import Engine from './engine/engine.mjs';
+import { Engine } from './adapter.mjs';
 import {
     Tween
 } from './engine/tween/index.mjs';
@@ -15,8 +15,8 @@ const modules = {
     Map: Map
 }
 
-function require(key){
+function req(key){
     return modules[key];
 }
 
-window.req = require;
+window.req = req;
