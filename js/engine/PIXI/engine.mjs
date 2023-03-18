@@ -5,32 +5,38 @@ import {
 import { GameObject } from './gameObject.mjs';
 import { Application } from './pixi.mjs';
 
+// Apply pixi extras
+// import _NOTHING_ from './pixi-extras.mjs';
+
 // Acts as a bridge for PIXI application
 class Engine{
 
-    static _app = null;
+    static app = null;
     static scene = null;
 
     static _init({
-        container
+        container, width, height
     }){
 
+        this.app = new Application();
+        this.app.renderer.background.color = 0x1c1c1c;
+        this.app.renderer.resize(width, height);
 
-        this._app = new Application({ resizeTo: container });
-        container.append(this._app.view);
+        container.append(this.app.view);
         
-        this.scene = _app.stage;
+        this.scene = this.app.stage;
     }
 
     static addEvent(type, callback, target = this){
         if(type == "tick"){
-            this._app.ticker.add(callback, target);
+            this.app.ticker.add(callback, target);
+
         }
     }
 
     static removeEvent(type, callback, target = this){
         if(type == "tick"){
-            this._app.ticker.remove(callback, target);
+            this.app.ticker.remove(callback, target);
         }
     }
 }

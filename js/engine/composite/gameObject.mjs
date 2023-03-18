@@ -6,15 +6,15 @@ class GameObject{
         - Textures
     */
 
-    children = [];
+    // children = [];
 
-    addEvent(type, callback){
-        Engine.addEvent(type, callback, this);
-    }
+    // addEvent(type, callback){
+    //     Engine.addEvent(type, callback, this);
+    // }
 
-    draw(){
+    // draw(){
 
-    }
+    // }
 }
 
 export {

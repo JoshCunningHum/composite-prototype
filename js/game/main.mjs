@@ -6,7 +6,8 @@ import { Engine, GameObject } from '../adapter.mjs';
 class Game{
     static defaults = {
         mapCols: 10,
-        mapRows: 10
+        mapRows: 10,
+        minPath: 40
     }
     
     map = null;
@@ -23,18 +24,24 @@ class Game{
         return this.map.findCell(cell => cell.label == Block.types.Base);
     }
 
-
     /**
      * 
      * @param {HTMLElement} container A container on where to display the game
      * @param {Number} width Display width in pixel
      * @param {Number} height Display height in pixel
      */
-    constructor(container){
+    constructor(container, width, height){
 
         // Initialize Engine 
-        Engine._init({container});
-        [this.width, this.height] = [container.clientWidth, container.clientHeight]
+        width ??= container.clientWidth;
+        height ??= container.clientHeight;
+        [this.width, this.height] = [width, height]
+
+        Engine._init({
+            container: container,
+            width: this.width,
+            height: this.height
+        });
     }
 
     // Initialization
@@ -47,7 +54,7 @@ class Game{
         ])
         
         this.menus.forEach(m => {
-            Engine.scene.add(m);
+            Engine.scene.addChild(m);
             if(m.label != "menu_Main") m.visible = false;
             else m.visible = true;
         })
@@ -57,18 +64,31 @@ class Game{
         
         // Initialize Map
         this.map = new Map(
-            this.width, this.height,
+            this.width - 100, this.width,
             Game.defaults.mapCols, Game.defaults.mapRows
         )
+        this.map.position.x = 25;
+
+        Engine.scene.addChild(this.map);
+
+        // Reset values
+        let generatedMap = Map.gen(Game.defaults.mapCols, Game.defaults.mapRows);
+        while(generatedMap.path_length < Game.defaults.minPath){
+            generatedMap = Map.gen(Game.defaults.mapCols, Game.defaults.mapRows);
+        }
+        this.map.setFromAscii(generatedMap.ascii, generatedMap.char_map);
+        // console.log(Map.gen(Game.defaults.mapCols, Game.defaults.mapRows));
+        // this.map.setFromAscii(...);
     }
 
     _start(){
 
         // Reset values
-        this.map.setFromAscii(Map.dev_gen(0, 0), "*_O8".split(""));
+        console.log(Map.gen(Game.defaults.mapCols, Game.defaults.mapRows));
+        // this.map.setFromAscii(Map.dev_gen(0, 0), "*_O8".split(""));
 
         // Start Loop
-        Engine.addEvent("tick", this._loop);
+        // Engine.addEvent("tick", this._loop);
     }
 
     // Loop (Add this to engine tick event)
@@ -77,7 +97,7 @@ class Game{
         // 
     }
 
-    // 
+    
 
     _stop(){
         Engine.removeEvent("tick", this._loop);

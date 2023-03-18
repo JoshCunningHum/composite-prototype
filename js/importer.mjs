@@ -1,6 +1,7 @@
 // Import all needed classes and add it to the window for usage in non-module files
 
 import { Engine } from './adapter.mjs';
+import { Graphics } from './engine/PIXI/pixi.mjs';
 import {
     Tween
 } from './engine/tween/index.mjs';
@@ -12,7 +13,8 @@ const modules = {
     Tween: Tween,
     Game: Game,
     Block: Block,
-    Map: Map
+    Map: Map,
+    Graphics: Graphics
 }
 
 function req(key){
