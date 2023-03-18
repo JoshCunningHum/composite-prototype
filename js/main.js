@@ -7,7 +7,7 @@ const Engine = req("Engine"),
 // Find container for the game
 const game = new Game(
     document.getElementById("game"),
-    540, 700
+    window.innerWidth, window.innerHeight
 )
 
 // Initialize the game

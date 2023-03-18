@@ -6,7 +6,7 @@ import { Engine, GameObject } from '../adapter.mjs';
 class Game{
     static defaults = {
         mapCols: 10,
-        mapRows: 10,
+        mapRows: 15,
         minPath: 40
     }
     
@@ -61,13 +61,15 @@ class Game{
 
         // TODO: Interfaces here (Should always be at last of the Engine.scene)
 
-        
+        const map_dimensions = Array(2).fill(Math.min(this.width, this.height));
+        map_dimensions[1] *= Game.defaults.mapRows / Game.defaults.mapCols;
+
         // Initialize Map
         this.map = new Map(
-            this.width - 100, this.width,
+            ...map_dimensions,
             Game.defaults.mapCols, Game.defaults.mapRows
         )
-        this.map.position.x = 25;
+        this.map.position.y = (this.height - map_dimensions[1]) / 4;
 
         Engine.scene.addChild(this.map);
 

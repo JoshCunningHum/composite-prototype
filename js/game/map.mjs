@@ -1,144 +1,10 @@
 import {
-    GameObject,
-    Geometry
+    GameObject
 } from "../adapter.mjs";
+import { Block } from './block.mjs';
 import {
     Util
 } from './util.mjs';
-
-// Map Blocks
-class Block extends GameObject {
-    static typeData = [];
-    static get types() {
-        const o = {};
-        this.typeData.forEach(type => o[type.label] = type);
-        return o;
-    }
-
-    mx;
-    my;
-
-    set mapPos([x, y]) {
-        this.mapX = x;
-        this.mapY = y;
-    }
-
-    set mapX(val) {
-        this.mx = val;
-        // TODO: GameObject coordinates 
-    }
-
-    set mapY(val) {
-        this.my = val;
-        // TODO: GameObject coordinates
-    }
-
-    get mapY() {
-        return this.my;
-    }
-
-    get mapX() {
-        return this.mx;
-    }
-
-    get mapPos() {
-        return [this.mapX, this.mapY];
-    }
-
-    get clone() {
-        return new Block({
-            label: this.label,
-            ...this.prop
-        });
-    }
-
-    /**
-     * 
-     * @param {Block} block Block to add in block types
-     * @returns Nothing
-     */
-    static add = (block) => (this.getIndex(block.label) == -1) && this.typeData.push(block);
-    /**
-     * 
-     * @param {String} label label of the block
-     * @returns Block that matches with the label parameter
-     */
-    static get = (label) => this.typeData.find(b => b.label == label);
-    /**
-     * 
-     * @param {String} label label of the block
-     * @returns Index of the Block in Block.types that matches with the label parameter
-     */
-    static getIndex = (label) => this.typeData.findIndex(b => b.label == label);
-    /**
-     * 
-     * @param {String} label label of the block
-     * @returns Removes the first block in Block.types that matches with the label parameter
-     */
-    static remove = (label) => this.typeData.splice(this.getIndex(label), 1);
-
-    static {
-        // Initialize blocks here
-        [
-            // Path
-            new Block({
-                label: "Path",
-                walkable: true,
-                isGenerated: true
-            }),
-            // Site (Where to build towers)
-            new Block({
-                label: "Site",
-                buildable: true,
-                tower: null,
-                filler: true
-            }),
-            // Base
-            new Block({
-                label: "Base",
-                destination: true
-            }),
-            // Where the enemy spawns (Not needed to be in the edge)
-            new Block({
-                label: "Spawn",
-                spawnable: true
-            }),
-
-            // Add more blocks in the future
-        ].forEach(block => this.add(block));
-    }
-
-    constructor({
-        label,
-        ...prop
-    }) {
-        // TODO: Initialize Game Object 
-        super();
-
-        // apply properties
-        this.label = label;
-        this.prop = prop;
-        Object.assign(this, prop);
-    }
-
-    /**
-     * 
-     * @param {Block} block Other block to compare to
-     */
-    equals(block) {
-        if (!(block instanceof Block)) return false;
-        return this.label == block.label;
-    }
-
-
-    // initialize bounding rects and positions and events
-    _initBlock() {
-        // Geometry
-        Geometry.BLOCK[this.label].bind(this)();
-        // Events
-
-    }
-}
 
 class Map extends GameObject {
 
@@ -272,6 +138,8 @@ class Map extends GameObject {
             mapAsc[cy][cx] = 1;
         })
 
+        // debugger;
+
         // format base and spawn
         const last = path.at(-1);
         mapAsc[spawn[1]][spawn[0]] = "8";
@@ -390,7 +258,7 @@ class Map extends GameObject {
      * @returns an array containing the 2D representation of the index
      */
     _getTwoR(i) {
-        return [i % this.cols, Math.floor(i / this.rows)];
+        return [i % this.cols, Math.floor(i / this.cols)];
     }
 
     /**
@@ -400,7 +268,7 @@ class Map extends GameObject {
      * @returns the one dimensional representation of the map coordinates
      */
     _getOneR(i, j) {
-        return i * this.rows + j;
+        return i * this.cols + j;
     }
 
     /**
@@ -441,9 +309,20 @@ class Map extends GameObject {
         return this.mapCell((cell) => cell.label);
     }
 
+    static __asciiFormat(char){
+        switch(char){
+            case "P":
+                return "+";
+            case "S":
+                return "_";
+            default:    
+                return char;
+        }
+    }
+
     // Returns ascii version of the map, used for developing purposes
     get _asciiMap() {
-        return this.mapCell((cell, r, c) => `${r == 0 && c > 0 ? "\n" : ""}${cell.label[0]}`);
+        return this.mapCell((cell, c, r) => `${c == 0 && r > 0 ? "\n" : ""}${Map.__asciiFormat(cell.label[0])}`).join("");
     }
 
     // Does not necessarily do a pathfinding algo, just returns the path collection
@@ -468,14 +347,13 @@ class Map extends GameObject {
      */
     setFromAscii(str, char_map) {
         // Rows are separated by new lines
-        str = str.split("").filter(c => c != '\n');
+        str = str.split("\n").join("").split("");
 
         // create hashmap for parsing
         const bs = {};
         char_map.reduce((obj, char, index) => {
             bs[char] = Block.typeData[index].clone;
         }, bs)
-
 
         // pass to setFromArray function
         this.setFromArray(str.map(c => bs[c].clone));
@@ -514,7 +392,7 @@ class Map extends GameObject {
         const [r, c] = [this.rows, this.cols];
         for (let i = 0; i < r; i++) {
             for (let j = 0; j < c; j++) {
-                this.setAt(i, j, arr[i * c + j]);
+                this.setAt(j, i, arr[this._getOneR(i, j)]);
             }
         }
 
@@ -542,7 +420,9 @@ class Map extends GameObject {
         }
 
         if (i == null) i = this._getOneR(y, x);
-        [y, x] = this._getTwoR(i);
+        [x, y] = this._getTwoR(i);
+
+        console.log(x, y, i);
 
         // If the same existing block is already in the map, cancel
         if (this.children[i]?.equals(block)) return;
