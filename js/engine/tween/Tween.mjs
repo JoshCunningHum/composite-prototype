@@ -680,6 +680,8 @@ class Tween {
       }
 
       if (!_isPlaying || (time < _startTime && !forceTime)) {
+        // console.log(time, _startTime);
+        // console.log("time is less than starting time");
         return true
       }
 
@@ -742,6 +744,7 @@ class Tween {
     }
 
     if (!propCount) {
+      console.log("NO PROP!");
       remove(this)
       return false
     }
@@ -750,6 +753,7 @@ class Tween {
       Tween.Renderer.update.call(this, object, elapsed)
     }
 
+    console.log("TWEEN UPDATED");
     this.emit(EVENT_UPDATE, object, elapsed, time)
 
     if (elapsed === 1 || (_reversed && elapsed === 0)) {

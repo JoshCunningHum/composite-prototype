@@ -1,3 +1,13 @@
+@font-face {
+    font-family: "AMGDT";
+    src: url("../assets/fonts/AMGDT.ttf");
+}
+
+@font-face{
+    font-family: "ISO";
+    src: url("../assets/fonts/ISOCP3.ttf");
+}
+
 * {
     margin: 0;
     padding: 0;

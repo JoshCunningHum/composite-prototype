@@ -1,12 +1,9 @@
-import {
-    Tween,
-    update as TweenUpdate
-} from '../tween/index.mjs';
 import { GameObject } from './gameObject.mjs';
 import { Application } from './pixi.mjs';
 
 // Apply pixi extras
-// import _NOTHING_ from './pixi-extras.mjs';
+import _NOTHING_ from './pixi-extras.mjs';
+import { gsap } from '../GSAP/index.mjs';
 
 // Acts as a bridge for PIXI application
 class Engine{
@@ -25,12 +22,23 @@ class Engine{
         container.append(this.app.view);
         
         this.scene = this.app.stage;
+
+        // USES GSAP TICKER
+        this.app.ticker.stop();
+
+        gsap.ticker.add((time, delta, frame) => {
+            this.app.ticker.update(time);
+        })
     }
 
     static addEvent(type, callback, target = this){
-        if(type == "tick"){
-            this.app.ticker.add(callback, target);
-
+        switch(type){
+            case "tick":
+                this.app.ticker.add(callback, target);
+                break;
+            case "click":
+                target.onpointertap = callback.bind(target);
+                break;
         }
     }
 

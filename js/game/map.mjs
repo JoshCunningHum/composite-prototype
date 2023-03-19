@@ -40,7 +40,7 @@ class Map extends GameObject {
         }
 
         function isGenDirSafe(tx, ty) {
-            return !hasBlock(tx, ty) && Util.isInBound(0, x, tx) && Util.isInBound(0, y, ty);
+            return !hasBlock(tx, ty) && Util.isInBound(0, x - 1, tx) && Util.isInBound(0, y - 1, ty);
         }
 
         function chooseDir(except = []) {
@@ -154,37 +154,14 @@ class Map extends GameObject {
         return {
             ascii: mapAsc,
             char_map: "+_O8".split(""),
-            path_length: path.length
+            path_length: path.length,
+            path_coord: path
         }
-    }
-
-    // TODO: Delete this after making the backtracking generator
-    static dev_gen(x, y) {
-        const def_blocks = {
-            P: Block.getIndex("Path"),
-            S: Block.getIndex("Site")
-        }
-
-
-        const def_map = [
-            "_8________",
-            "_*_****___",
-            "_*_*__*___",
-            "_***__*___",
-            "______*___",
-            "______*___",
-            "______*___",
-            "______*___",
-            "______*___",
-            "______O___",
-        ].join("\n");
-
-        // TODO: Add initialization of blocks
-        return def_map;
     }
 
     width = 500;
     height = 500;
+    _path = null;
 
     // TODO: Create positioning for the map (Extend as another GameObject)
 
@@ -201,10 +178,61 @@ class Map extends GameObject {
 
     get rows() {
         return this.rs
-    };
+    }
     get cols() {
         return this.cs
-    };
+    }
+
+    get path(){
+        if(this._path == null) this._generatePath();
+        return this._path;
+    }
+
+    set path(val){
+        this._path = val;
+    }
+
+    get spawn(){
+        this.path[0];
+    }
+
+    get base(){
+        this.path.at(-1);
+    }
+
+    getBlockFrom(block, x, y){
+        return this.getAt(block.mapX + x, block.mapY - y);
+    }
+
+    _generatePath(){
+        // will be basing on children
+        if(this.children.length == 0) return new Error("No blocks in map");
+        const pc = this.pathCollection,
+              spawn = pc.find(b => b.label = "Spawn");
+        this._path = [spawn];
+
+        let last = spawn, count = 0;
+        // now scan the last block in path for path blocks (i.e. path and base)
+        while(last.label != "Base"){
+            const adj = last.adj;
+
+            // console.log(last._gid + ": ", adj.map(e => `${e?._gid} - ${e?.label}`));
+
+            adj.forEach((b, i) => {
+                if(b == null) return;
+                if(this._path.some(p => p._gid == b._gid)) return;
+                if(b.label == "Path" || b.label == "Base"){
+                    this._path.push(b);
+                    b.dirFrom = i;
+                    last.dirTo = i;
+                }
+            })
+
+            count++;
+            last = this._path[count];
+            if(count > pc.length) break;
+        }
+    }
 
 
     // TODO: Change structure to one dimensional array
@@ -239,23 +267,24 @@ class Map extends GameObject {
         return [this.blockWidth, this.blockHeight];
     }
 
+    _cellPos(x, y){
+        const [bX, bY] = this.blockSize,
+              [hX, hY] = [bX / 2, bY / 2];
+
+        return [x * bX + hX + this.position.x,
+                y * bY + hY + this.position.y]
+    }
+
     get cellCoords() {
         // returns an array of coordinates for each block (center), should be in relative of the map
-        const [bX, bY] = this.blockSize,
-            [hX, hY] = [bX / 2, bY / 2];
-
-        // TODO: Add actual map gameobject coordinates
-        return this.mapCell(cell => [
-            cell.mapX * bX + hX + this.position.x,
-            cell.mapY * bY + hY + this.position.y
-        ]);
+        return this.mapCell((cell, r, c) => this._cellPos(c, r));
     }
 
 
     /**
      * 
      * @param {Number} i the nth number of the cell in a one dimension
-     * @returns an array containing the 2D representation of the index
+     * @returns an array containing the 2D representation of the index (X, Y)
      */
     _getTwoR(i) {
         return [i % this.cols, Math.floor(i / this.cols)];
@@ -298,7 +327,7 @@ class Map extends GameObject {
     }
 
     filterCell(callback) {
-        return this.children.filler((cell, i) => callback(cell, ...this._getTwoR(i).reverse(), i));
+        return this.children.filter((cell, i) => callback(cell, ...this._getTwoR(i).reverse(), i));
     }
 
     get dataInt() {
@@ -382,6 +411,9 @@ class Map extends GameObject {
 
         // Reposition Blocks
         this._applyCoordsByPosition();
+
+        // Reset path
+        this._path = null;
     }
 
     /**
@@ -398,6 +430,9 @@ class Map extends GameObject {
 
         // Reposition Blocks
         this._applyCoordsByPosition();
+        
+        // Reset path
+        this._path = null;
     }
 
     /**
@@ -422,7 +457,6 @@ class Map extends GameObject {
         if (i == null) i = this._getOneR(y, x);
         [x, y] = this._getTwoR(i);
 
-        console.log(x, y, i);
 
         // If the same existing block is already in the map, cancel
         if (this.children[i]?.equals(block)) return;

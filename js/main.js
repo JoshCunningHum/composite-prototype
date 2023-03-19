@@ -1,14 +1,23 @@
 const Engine = req("Engine"),
-      Tween =  req("Tween"),
       Block = req("Block"),
       Game = req("Game"),
       Graphics = req("Graphics");
 
+let width = window.innerWidth,
+    height = window.innerHeight;
+
+// For PCs
+if(height < width) {
+    width = 400;
+    height = 700;
+}
+
 // Find container for the game
 const game = new Game(
     document.getElementById("game"),
-    window.innerWidth, window.innerHeight
+    width, height
 )
 
 // Initialize the game
 game._init();
+game._start();

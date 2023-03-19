@@ -49,6 +49,17 @@ class Block extends GameObject {
         });
     }
 
+    get adj(){
+        const m = this.parent; // map
+
+        return [
+            m.getAt(this.mx, this.my - 1),
+            m.getAt(this.mx + 1, this.my),
+            m.getAt(this.mx, this.my + 1),
+            m.getAt(this.mx - 1, this.my)
+        ]
+    }
+
     /**
      * 
      * @param {Block} block Block to add in block types
@@ -133,7 +144,16 @@ class Block extends GameObject {
         // Geometry
         Geometry.BLOCK[this.label].bind(this)();
         // Events
+        this.eventMode = "static";
 
+        this.addEvent("click", () => {
+            console.log("CLICK!");
+        })
+
+        // TODO: DEV PURPOSES
+        // this.onpointertap = () => {
+        //     console.log(this._gid);
+        // }
     }
 }
 

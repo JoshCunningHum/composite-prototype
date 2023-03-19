@@ -1,4 +1,5 @@
 import { Engine } from '../../adapter.mjs';
+import { Util } from '../../game/util.mjs';
 import { Graphics } from './pixi.mjs';
 
 class GameObject extends Graphics{
@@ -8,7 +9,7 @@ class GameObject extends Graphics{
     // TODO: Draw Sequence
 
     _draw = null;
-    _engine = null;
+    _engine = Engine;
 
     /**
      * 
@@ -18,15 +19,14 @@ class GameObject extends Graphics{
         super()
 
         this.label = label;
+        this._gid = Math.random().toString(36).substring(2,10);
     }
 
     /**
      * All game objects needs to be initialized for use
-     * @param {Engine} e the reference to the engine used
      * @param {Function} draw the draw sequence of the object, determines how it will be drawed, scope will be the object itself. Should use ES5 Functions
      */
-    _init({e, draw}){
-        this._engine = e;
+    _init({draw}){
         this._draw = draw.bind(this);
     }
 
@@ -38,6 +38,24 @@ class GameObject extends Graphics{
         this._engine.addEvent(type, callback, this);
     }
     
+    centerPutAt(x, y){
+        this.position.set(
+            x - this.width / 2,
+            y - this.height / 2
+        )
+    }
+
+    hide(){
+        this.visible = false;
+    }
+
+    show(){
+        this.visible = true;
+    }
+
+    get center(){
+        return [this.width / 2, this.height / 2];
+    }
 }
 
 export {

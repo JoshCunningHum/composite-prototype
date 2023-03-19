@@ -1,9 +1,5 @@
 import { GameObject } from '../adapter.mjs';
 import Event from './event.mjs';
-import {
-    update as TweenUpdate,
-    Tween
-} from './tween/index.mjs';
 
 class Engine{
     /*  TODO
