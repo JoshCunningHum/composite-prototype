@@ -55,7 +55,8 @@ class Wave{
         this.left -= time * 10;
         if(this.left < 0) this.spawning = true;
         this.tickSpawn(time);
-        // console.log(this.left);
+
+        return this.left;
     }
 
     tickSpawn(time){    
@@ -72,14 +73,16 @@ class Wave{
         
     }
 
+    get currentSkipValue(){
+        return this.skipValue * this.left / this.oleft;
+    }
 
     // also returns skip value to be added in the economy
     skip(){
         // sets time left to countdown to 0
-        const tl = this.left;
+        const tl = this.currentSkipValue;
         this.left = 0;
-        this.reduce(1);
-        return this.skipValue * tl / this.oleft;
+        return tl;
     }
 }  
 

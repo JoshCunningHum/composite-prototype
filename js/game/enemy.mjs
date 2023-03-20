@@ -148,7 +148,7 @@ class Enemy extends GameObject{
         const target = {
             x: nb.x,
             y: nb.y,
-            r: (nb.dirTo ? nb.dirTo * 90 : this.buffer.r)
+            r: (nb.dirTo != undefined ? nb.dirTo * 90 : this.buffer.r)
         };
 
         this.move_sequence = gsap.to( this.buffer, {

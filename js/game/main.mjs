@@ -10,7 +10,8 @@ class Game{
     static defaults = {
         mapCols: 10,
         mapRows: 12,
-        first_wave_time: 1,
+        first_wave_time: 7,
+        starting_money: 50,
         health: 20
     }
 
@@ -28,14 +29,21 @@ class Game{
     i = {};
     interfaces = [];
 
+    /**
+     * 
+     * @param {GameObject} infc the interface to be added
+     */
+    _addInterface(infc, menu){
+        this.interfaces.push(infc);
+        this.i[infc.label] = infc;
+
+        if(!menu) return;
+        menu.addChild(infc);
+    }
+
     // contain enemies
     entities = [];
     enemy_plane = null;
-
-    /* Game Values */
-    wave_num;
-    wave_time; // time left for another wave
-    enemy_queue; // enemy spawn queues
 
     /* Quick Getters */
     get base_block(){
@@ -50,6 +58,7 @@ class Game{
         return this.menus.find(e => e.label == "menu_Game");
     }
 
+    // GSAP Timeline
     tl = null;
 
     /**
@@ -216,7 +225,6 @@ class Game{
 
         // TODO: Interfaces here (Should always be at last of the Engine.scene so it always shown, basically higher z-index)
 
-        // Interfaces (mostly inside the game menu)
         
         // Initialize Map
         const map_dimensions = Array(2).fill(Math.min(this.width, this.height));
@@ -240,6 +248,66 @@ class Game{
         this.menu_game.addChildAt(this.map, 0);
 
 
+        // Interfaces (mostly inside the game menu)
+        {
+            const font_size_btn = 25,
+                  font_size_detail = 20;
+
+            // Wave Details
+            const w_ctCont = new GameObject("iwave_ctCont"),
+                  w_ctBar = new GameObject("iwave_ctBar"),
+                  w_ctSkip = new TextObject("SKIP", {
+                    fontFamily: "ISO",
+                    fontSize: font_size_btn,
+                    stroke: "white",
+                    strokeThickness: 1,
+                    fill: "white",
+                    align: "center"
+                  });
+
+            
+            // TODO: PIXI Exlusive Geometry Used
+            w_ctBar.beginFill(0xee1010)
+            .drawRect(0, 0, this.width, 4)
+            .endFill();
+            w_ctSkip.position.y -= font_size_btn + 5;
+            w_ctCont.position.y = (this.height - map_dimensions[1]) / 2 - 4;
+
+            w_ctSkip.eventMode = "static";
+            w_ctSkip.onpointertap = () => {
+                if(this.wave) this.addMoney(this.wave.skip());
+            }
+
+            w_ctCont.addChild(w_ctBar, w_ctSkip);
+
+            this._addInterface(w_ctCont, this.menu_game);
+
+            // Economy
+            const e_moneyCont = new GameObject("ieco_mCont"),
+                  e_moneyTxt = new TextObject("0", {
+                    fontFamily: "ISO",
+                    fontSize: font_size_detail,
+                    stroke: "white",
+                    strokeThickness: 1,
+                    fill: "white",
+                    align: "center"
+                  }),
+                  e_moneyIco = new GameObject("ieco_mIcon");
+
+            e_moneyTxt.position.x = font_size_detail + 5;
+
+            // TODO: PIXI Exlusive Geometry Used
+            e_moneyIco.beginFill(0xfcba03)
+            .drawEllipse(...Array(4).fill(font_size_detail / 2.5))
+            .endFill();
+
+            e_moneyIco.position.set(5, 5);
+
+            e_moneyCont.addChild(e_moneyTxt, e_moneyIco);
+
+            this._addInterface(e_moneyCont, this.menu_game);
+        }
+
         // DEV
 
 
@@ -248,7 +316,10 @@ class Game{
 
     // Waves
     wave = null; // Not spawning enemies
-    wc = 0;
+    wc = 0; // wave count (Number of waves)
+    wt = null; // time left for another wave
+    wct = null; // time countdown for the wave to begin spawning
+    enemy_queue; // enemy spawn queues
 
     get wave_count(){
         return this.wc;
@@ -259,6 +330,25 @@ class Game{
         // modify text object content here
     }
 
+    get wave_countdown(){
+        return this.wct;
+    }
+
+    set wave_countdown(val){
+        this.wct = val;
+
+        if(!this.wave) return;
+        // change object here
+        const owct = this.wave.oleft,
+              i_wave = this.get_i("iwave_ctCont");
+        i_wave.getChildAt(0).scale.x = val / owct;
+
+        i_wave.getChildAt(1).text = `SKIP (${Math.floor(this.wave.currentSkipValue)})`;
+
+        if(val <= 0) i_wave.hide();
+        else i_wave.show();
+    }
+
     test = null;
 
     _start(){
@@ -266,6 +356,8 @@ class Game{
 
         // Reset values
         {
+            this.money = defs.starting_money; // reset money
+
             this.showMenu("menu_mapPreload");
 
             // Generate Map
@@ -294,12 +386,6 @@ class Game{
             skipValue: 20,
             game: this,
         })
-
-        // TESTING
-        // const testEnemy = Enemy.types.A.clone;
-        // testEnemy.spawn(this.map.path);
-        // this._addEnemy(testEnemy)
-
         
         // Start Loop
         Engine.addEvent("tick", this._loop, this);
@@ -316,7 +402,7 @@ class Game{
     // Only handle game events, not rendering, as the engine does that
     _loop(delta){
         // get on countdown wave to reduce time then start spawning
-        if(this.wave) this.wave.reduce(delta);
+        if(this.wave) this.wave_countdown = this.wave.reduce(delta);
     }
 
     
@@ -331,8 +417,23 @@ class Game{
         this.enemy_plane.addChild(...objs);
     }
 
+    t_money = 0;
+
+    get money(){
+        return this.t_money;
+    }
+
+    set money(val){
+        this.t_money = val;
+
+        // change object
+        const i_money = this.get_i("ieco_mCont");
+
+        i_money.getChildAt(0).text = Math.floor(val);
+    }
+
     addMoney(val){
-        // Tower building money
+        this.money += val;
     }
 
     addArcane(val){

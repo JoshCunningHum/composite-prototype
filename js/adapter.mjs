@@ -115,6 +115,7 @@ class Geometry{
             .endFill();
         }
     }
+
 }
 
 export {
