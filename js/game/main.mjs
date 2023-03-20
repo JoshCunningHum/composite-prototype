@@ -1,6 +1,6 @@
 import { Map, Block} from "./map.mjs";
 import { Tower } from "./tower.mjs";
-import { Engine, GameObject, TextObject } from '../adapter.mjs';
+import { Engine, GameObject, Geometry, TextObject } from '../adapter.mjs';
 import { Enemy } from "./enemy.mjs";
 import { Wave } from "./wave.mjs";
 import { gsap } from "../engine/GSAP/index.mjs";
@@ -146,6 +146,10 @@ class Game{
         this.menus.forEach(m => {
             Engine.scene.addChild(m);
             this.m[m.label.split("_")[1]] = m;
+
+            // set each menu to have full width and height
+            m.width = this.width;
+            m.height = this.height;
         });
 
         // Main Menu
@@ -235,6 +239,7 @@ class Game{
             Game.defaults.mapCols, Game.defaults.mapRows
         )
         this.map.position.y = (this.height - map_dimensions[1]) / 4;
+        this.map.game = this;
 
         // Initialize Enemy Container (position and size should be same as map)
         this.enemy_plane = new GameObject("enemy_container");
@@ -306,11 +311,65 @@ class Game{
             e_moneyCont.addChild(e_moneyTxt, e_moneyIco);
 
             this._addInterface(e_moneyCont, this.menu_game);
+
+            // Tower Build Menu
+            const b_towerCont = new GameObject("ibuild_towerCont"),
+                  b_towerA = new GameObject("ibuild_towerA"),
+                  b_towerB = new GameObject("ibuild_towerB"),
+                  b_towerC = new GameObject("ibuild_towerC"),
+                  b_towerD = new GameObject("ibuild_towerD");
+
+            const b_btndim = [ this.width / 4, this.map.blockHeight + 10],
+                  b_btnHalf = b_btndim.map(e => e /= 2),
+                  b_btnHalfN = b_btnHalf.map(e => -e),
+                  b_cbtn = 0x333333;
+
+            b_towerCont._igroup = "tower_management";
+            b_towerCont.position.y = this.height - b_btndim[1];
+
+            // set button boxes
+            b_towerA.beginFill(b_cbtn).drawRect(...b_btnHalfN, ...b_btndim);
+            b_towerB.beginFill(b_cbtn).drawRect(...b_btnHalfN, ...b_btndim);
+            b_towerC.beginFill(b_cbtn).drawRect(...b_btnHalfN, ...b_btndim);
+            b_towerD.beginFill(b_cbtn).drawRect(...b_btnHalfN, ...b_btndim);
+
+            // set button icons
+            Geometry.TOWER.REG.bind(b_towerA)(this.map.blockWidth / 2, 4);
+            Geometry.TOWER.CIRCLE.bind(b_towerB)(this.map.blockWidth / 2);
+            Geometry.TOWER.REG.bind(b_towerC)(this.map.blockWidth / 2, 5);
+            Geometry.TOWER.REG.bind(b_towerD)(this.map.blockWidth / 2, 6);
+
+            // set button positions
+            b_towerA.position.set(...b_btnHalf)
+            b_towerB.position.set(b_btnHalf[0] + b_btndim[0], b_btnHalf[1]);
+            b_towerC.position.set(b_btnHalf[0] + b_btndim[0] * 2, b_btnHalf[1]);
+            b_towerD.position.set(b_btnHalf[0] + b_btndim[0] * 3, b_btnHalf[1]);
+
+            // set button events
+            b_towerA.eventMode = "static";
+            b_towerB.eventMode = "static";
+            b_towerC.eventMode = "static";
+            b_towerD.eventMode = "static";
+            b_towerA.onpointertap = (evs) => {
+                evs.stopPropagation();
+                this.buildTower("A")
+            };
+            b_towerB.onpointertap = () => this.buildTower("B");
+            b_towerC.onpointertap = () => this.buildTower("C");
+            b_towerD.onpointertap = () => this.buildTower("D");
+
+            b_towerCont.addChild(b_towerA, b_towerB, b_towerC, b_towerD);
+
+            b_towerCont.hide();
+            this._addInterface(b_towerCont, this.menu_game);
+
+            // hide all interfaces if clicking on black space
+            this.menu_game.onpointertap = (evs) => {
+                // evs.stopPropagation();
+                console.log("GAME MENU CLICK!");
+                this.hide_i("ibuild_towerCont");
+            }
         }
-
-        // DEV
-
-
 
     }
 
@@ -430,6 +489,23 @@ class Game{
         const i_money = this.get_i("ieco_mCont");
 
         i_money.getChildAt(0).text = Math.floor(val);
+    }
+
+    buildTower(type){
+        let require = 0; // money required
+
+        switch(type){
+            case "A":
+                break;
+            case "B":
+                break;
+            case "C":
+                break;
+            case "D":
+                break;
+        }
+
+        console.log(type);
     }
 
     addMoney(val){

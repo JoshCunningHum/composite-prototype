@@ -464,6 +464,7 @@ class Map extends GameObject {
         // change map data
         this.children[i] = block;
         block.parent = this;
+        block.game = this.game;
         // change blocks properties
         this.children[i].blockSize = this.blockSize;
         this.children[i].mapPos = [x, y];

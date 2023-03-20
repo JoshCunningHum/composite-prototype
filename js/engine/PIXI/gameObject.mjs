@@ -1,12 +1,16 @@
 import { Engine } from '../../adapter.mjs';
 import { Util } from '../../game/util.mjs';
-import { Graphics } from './pixi.mjs';
+import { Graphics, Sprite } from './pixi.mjs';
 
 class GameObject extends Graphics{
 
     // TODO: Add Events
     // TODO: Positioning Elements
     // TODO: Draw Sequence
+
+    static from(image){
+        return Sprite.from(image);
+    }
 
     _draw = null;
     _engine = Engine;
@@ -44,6 +48,7 @@ class GameObject extends Graphics{
             y - this.height / 2
         )
     }
+
 
     hide(){
         this.visible = false;

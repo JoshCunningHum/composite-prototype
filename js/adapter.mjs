@@ -15,6 +15,7 @@ const use_pixi = true;
 
 // Used for switching between PIXI and custom engine
 const GameObject = use_pixi ? class extends PIXI_Graphics{} : null;
+
 const Engine = use_pixi ? class extends PIXI_Engine{} : null;
 const TextObject = use_pixi ? class extends PIXI_Text{} : null;
 
@@ -84,6 +85,37 @@ class Geometry{
         }
 
         // events
+    }
+
+    // TOWER 
+    static {
+        // TODO: Change tower colors later
+
+        const cs = {
+            c_a: 0x999999,
+            c_b: 0x4a4a4a,
+            c_c: 0x4a4a4a,
+            c_d: 0x4a4a4a
+        }
+
+        const def_size = 10; // radius
+
+        this.TOWER.REG = function(radius = 10, sides = 4, type = "a"){
+            radius = radius * 4 / sides;
+            type = this.t_type || type;
+
+            this.beginFill(cs[`c_${type}`])
+            .drawRegularPolygon(0, 0, radius, sides, Math.PI / sides)
+            .endFill();
+        }
+
+        this.TOWER.CIRCLE = function(radius = 10, type = "a"){
+            type = this.t_type || type;
+
+            this.beginFill(cs[`c_${type}`])
+            .drawEllipse(0, 0, radius / 1.5, radius / 1.5)
+            .endFill();
+        }
     }
 
     // ENEMY

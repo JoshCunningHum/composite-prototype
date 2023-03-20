@@ -15,6 +15,20 @@ class Block extends GameObject {
     mx;
     my;
 
+    _site_selected = false;
+
+    get selected(){
+        return this._site_selected;
+    }
+
+    set selected(val){
+        this._site_selected = val;
+
+        // change color base on value
+        if(val) this.tint = 0x00ff00;
+        else this.tint = 0xffffff;
+    }
+
     set mapPos([x, y]) {
         this.mapX = x;
         this.mapY = y;
@@ -146,9 +160,21 @@ class Block extends GameObject {
         // Events
         this.eventMode = "static";
 
-        this.addEvent("click", () => {
-            console.log("CLICK!");
-        })
+        // do not use click as it only works on pc
+        this.onpointertap = (evs) => {
+            evs.stopPropagation();
+
+            // un select all other blocks
+            this.parent.loopCell(cell => cell.selected = false);
+
+            // Only works on site type blocks
+            if(this.label != "Site") return;
+
+            // show build tower interface menu, and set this block to selected
+            this.selected = true;
+
+            this.game.show_i("ibuild_towerCont");
+        }
 
         // TODO: DEV PURPOSES
         // this.onpointertap = () => {
