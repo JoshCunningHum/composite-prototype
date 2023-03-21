@@ -34,7 +34,9 @@ class Engine{
     static addEvent(type, callback, target = this){
         switch(type){
             case "tick":
-                this.app.ticker.add(callback, target);
+                gsap.ticker.add((time, delta, frame) => {
+                    callback.bind(target)(delta);
+                });
                 break;
             case "click":
                 target.onpointertap = callback.bind(target);

@@ -12,6 +12,8 @@ if(height < width) {
     height = 700;
 }
 
+// alert(`${width} ${height}`)
+
 // Find container for the game
 const game = new Game(
     document.getElementById("game"),

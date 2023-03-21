@@ -58,6 +58,17 @@ class GameObject extends Graphics{
         this.visible = true;
     }
 
+    distFromSquare(obj){
+        const [x, y] = [this.position.x - obj.position.x,
+                        this.position.y - obj.position.y];
+
+        return x**2 + y**2;
+    }
+
+    distFrom(obj){
+        return Math.sqrt(this.distFromSquare(obj));
+    }
+
     get center(){
         return [this.width / 2, this.height / 2];
     }

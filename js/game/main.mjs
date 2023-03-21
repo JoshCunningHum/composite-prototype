@@ -1,9 +1,10 @@
 import { Map, Block} from "./map.mjs";
-import { Tower } from "./tower.mjs";
+import { Apeira, Hexa, Penta, Quadra } from "./tower.mjs";
 import { Engine, GameObject, Geometry, TextObject } from '../adapter.mjs';
 import { Enemy } from "./enemy.mjs";
 import { Wave } from "./wave.mjs";
 import { gsap } from "../engine/GSAP/index.mjs";
+import { Util } from "./util.mjs";
 
 // Acts as the game loop
 class Game{
@@ -41,8 +42,16 @@ class Game{
         menu.addChild(infc);
     }
 
-    // contain enemies
+    // container direct access
     entities = [];
+    towers = [];
+    projectiles = [];
+    effects = [];
+
+    // game layers
+    effects_plane = null;
+    projectile_plane = null;
+    tower_plane = null;
     enemy_plane = null;
 
     /* Quick Getters */
@@ -147,9 +156,10 @@ class Game{
             Engine.scene.addChild(m);
             this.m[m.label.split("_")[1]] = m;
 
-            // set each menu to have full width and height
-            m.width = this.width;
-            m.height = this.height;
+            // draw backgrounds in each menu
+            m.beginFill(0x1c1c1c)
+            .drawRect(0, 0, this.width, this.height)
+            .endFill();
         });
 
         // Main Menu
@@ -229,29 +239,49 @@ class Game{
 
         // TODO: Interfaces here (Should always be at last of the Engine.scene so it always shown, basically higher z-index)
 
-        
+        this.enemy_plane = new GameObject("enemy_container");
+        this.tower_plane = new GameObject("tower_container");
+        this.effects_plane = new GameObject("effects_container");
+        this.projectile_plane = new GameObject("projectile_container");
+
+        const [
+            _ep, _tp, _fxp, _pp
+        ] = [this.enemy_plane, this.tower_plane, this.effects_plane, this.projectile_plane];
+
         // Initialize Map
         const map_dimensions = Array(2).fill(Math.min(this.width, this.height));
         map_dimensions[1] *= Game.defaults.mapRows / Game.defaults.mapCols;
+
+        const _mapStartY = (this.height - map_dimensions[1]) / 4;
 
         this.map = new Map(
             ...map_dimensions,
             Game.defaults.mapCols, Game.defaults.mapRows
         )
-        this.map.position.y = (this.height - map_dimensions[1]) / 4;
+        this.map.position.y = _mapStartY;
         this.map.game = this;
 
         // Initialize Enemy Container (position and size should be same as map)
-        this.enemy_plane = new GameObject("enemy_container");
-        const _ep = this.enemy_plane;
         [_ep.width, _ep.height] = map_dimensions;
-        _ep.position.y = (this.height - map_dimensions[1]) / 4;
+        _ep.position.y = _mapStartY;
         this.entities = this.enemy_plane.children;
 
+        // Initialize Tower Container
+        [_tp.width, _tp.height] = map_dimensions;
+        _tp.position.y = _mapStartY;
+        this.towers = this.tower_plane.children;
 
-        this.menu_game.addChildAt(_ep, 0);
-        this.menu_game.addChildAt(this.map, 0);
-
+        // Initialize Effects Container
+        [_fxp.width, _fxp.height] = map_dimensions;
+        _fxp.position.y = _mapStartY;
+        this.effects = this.effects_plane.children;
+        
+        // Initialize Projectile Container
+        [_pp.width, _pp.height] = map_dimensions;
+        _pp.position.y = _mapStartY;
+        this.projectiles = this.projectile_plane.children;
+        
+        this.menu_game.addChild(this.map, _ep, _tp, _fxp, _pp);
 
         // Interfaces (mostly inside the game menu)
         {
@@ -319,13 +349,13 @@ class Game{
                   b_towerC = new GameObject("ibuild_towerC"),
                   b_towerD = new GameObject("ibuild_towerD");
 
-            const b_btndim = [ this.width / 4, this.map.blockHeight + 10],
+            const b_btndim = [ this.width / 4, this.map.blockHeight + 15],
                   b_btnHalf = b_btndim.map(e => e /= 2),
                   b_btnHalfN = b_btnHalf.map(e => -e),
                   b_cbtn = 0x333333;
 
             b_towerCont._igroup = "tower_management";
-            b_towerCont.position.y = this.height - b_btndim[1];
+            b_towerCont.position.y = (this.height - map_dimensions[1]) / 2 + map_dimensions[1] + 2;
 
             // set button boxes
             b_towerA.beginFill(b_cbtn).drawRect(...b_btnHalfN, ...b_btndim);
@@ -334,10 +364,10 @@ class Game{
             b_towerD.beginFill(b_cbtn).drawRect(...b_btnHalfN, ...b_btndim);
 
             // set button icons
-            Geometry.TOWER.REG.bind(b_towerA)(this.map.blockWidth / 2, 4);
-            Geometry.TOWER.CIRCLE.bind(b_towerB)(this.map.blockWidth / 2);
-            Geometry.TOWER.REG.bind(b_towerC)(this.map.blockWidth / 2, 5);
-            Geometry.TOWER.REG.bind(b_towerD)(this.map.blockWidth / 2, 6);
+            Geometry.TOWER.REG.bind(b_towerA)(this.map.blockWidth / 2, 4, "build");
+            Geometry.TOWER.CIRCLE.bind(b_towerB)(this.map.blockWidth / 2, "build");
+            Geometry.TOWER.REG.bind(b_towerC)(this.map.blockWidth / 2, 5, "build");
+            Geometry.TOWER.REG.bind(b_towerD)(this.map.blockWidth / 2, 6, "build");
 
             // set button positions
             b_towerA.position.set(...b_btnHalf)
@@ -460,8 +490,15 @@ class Game{
     // Loop (Add this to engine tick event)
     // Only handle game events, not rendering, as the engine does that
     _loop(delta){
+        // console.log(delta * 1000);
+
         // get on countdown wave to reduce time then start spawning
         if(this.wave) this.wave_countdown = this.wave.reduce(delta);
+
+        // get all towers to start shootin
+        this.towers.forEach(t => {
+            t.check(delta);
+        })
     }
 
     
@@ -471,6 +508,8 @@ class Game{
     }
 
     
+    // Game related methods
+
     _addEnemy(...objs){
         objs.forEach(o => o.game = this);
         this.enemy_plane.addChild(...objs);
@@ -491,21 +530,62 @@ class Game{
         i_money.getChildAt(0).text = Math.floor(val);
     }
 
+    hasTowerAtBlock(x, y){
+        if(x instanceof Block) [x, y] = x.mapPos;
+        return this.towers.some(t => t.mx == x && t.my == y);
+    }
+
     buildTower(type){
-        let require = 0; // money required
+        let Tower = null;
+
+        const selected = this.map.selectedBlock;
+
+        // check first if tower is already existing in that block
+        
 
         switch(type){
             case "A":
+                Tower = Quadra;
                 break;
             case "B":
+                Tower = Apeira;
                 break;
             case "C":
+                Tower = Penta;
                 break;
             case "D":
+                Tower = Hexa;
                 break;
         }
 
-        console.log(type);
+        // check for cost
+        if(this.money < Tower.cost){
+            // TODO: Add animation/indication that says no money
+
+            return;
+        }
+
+        const t = new Tower({block: selected});
+
+        t.game = this;
+        t._initTower();
+
+        // add tower to tower plane
+        this.tower_plane.addChild(t);
+        this.money -= Tower.cost;
+
+        // close all interface and deselect all blocks
+        this.map.deselectAll();
+    }
+
+    sellTower(){
+        
+    }
+
+    getEnemiesAtRange(minX, minY, maxX, maxY){
+        return this.entities.filter(e => {
+            return Util.isInBound(minX, maxX, e.x) && Util.isInBound(minY, maxY, e.y);
+        })
     }
 
     addMoney(val){

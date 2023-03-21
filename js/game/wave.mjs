@@ -51,8 +51,9 @@ class Wave{
 
     // time is in ms
     reduce(time){
+        time /= 1000;
 
-        this.left -= time * 10;
+        this.left -= time;
         if(this.left < 0) this.spawning = true;
         this.tickSpawn(time);
 
@@ -64,7 +65,7 @@ class Wave{
         if(!this.spawning) return; // Don't spawn if not spawning dugh
         if(this.enemyQueue.length == 0) this.game._waveDone();
         this.enemyQueue.forEach((e, i) => {
-            e.spawnLeft -= time * 10;
+            e.spawnLeft -= time;
             if(e.spawnLeft > 0) return;
             this.game._addEnemy(e);
             e.spawn(this.game.map.path);

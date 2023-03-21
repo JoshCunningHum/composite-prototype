@@ -101,7 +101,11 @@ class Enemy extends GameObject{
         if(this.health <= 0) die();
     }
 
+    dead = false;
+
     die(){
+        this.dead = true;
+
         // TODO: PIXI JS Exlusive
         this.parent.removeChild(this);
         this.hide();

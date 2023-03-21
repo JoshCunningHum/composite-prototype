@@ -33,7 +33,7 @@ class Geometry{
         const c_path = 0x333333,
               c_site = 0x555555,
               c_base = 0x2020ed,
-              c_spawn = 0xed2020;
+              c_spawn = 0x9d0de5;
 
         // gap per block
         const g_block = 5;
@@ -92,15 +92,16 @@ class Geometry{
         // TODO: Change tower colors later
 
         const cs = {
-            c_a: 0x999999,
-            c_b: 0x4a4a4a,
-            c_c: 0x4a4a4a,
-            c_d: 0x4a4a4a
+            c_build: 0x999999,
+            c_a: 0xffa54c,
+            c_b: 0xffa54c,
+            c_c: 0xffa54c,
+            c_d: 0xffa54c
         }
 
         const def_size = 10; // radius
 
-        this.TOWER.REG = function(radius = 10, sides = 4, type = "a"){
+        this.TOWER.REG = function(radius = 10, sides = 4, type = "build"){
             radius = radius * 4 / sides;
             type = this.t_type || type;
 
@@ -109,7 +110,7 @@ class Geometry{
             .endFill();
         }
 
-        this.TOWER.CIRCLE = function(radius = 10, type = "a"){
+        this.TOWER.CIRCLE = function(radius = 10, type = "build"){
             type = this.t_type || type;
 
             this.beginFill(cs[`c_${type}`])

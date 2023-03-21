@@ -200,6 +200,10 @@ class Map extends GameObject {
         this.path.at(-1);
     }
 
+    get selectedBlock(){
+        return this.findCell(cell => cell.selected);
+    }
+
     getBlockFrom(block, x, y){
         return this.getAt(block.mapX + x, block.mapY - y);
     }
@@ -328,6 +332,10 @@ class Map extends GameObject {
 
     filterCell(callback) {
         return this.children.filter((cell, i) => callback(cell, ...this._getTwoR(i).reverse(), i));
+    }
+
+    deselectAll(){
+        this.loopCell(b => b.selected = false);
     }
 
     get dataInt() {

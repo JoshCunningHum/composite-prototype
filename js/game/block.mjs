@@ -165,10 +165,11 @@ class Block extends GameObject {
             evs.stopPropagation();
 
             // un select all other blocks
-            this.parent.loopCell(cell => cell.selected = false);
+            this.parent.deselectAll();
 
             // Only works on site type blocks
             if(this.label != "Site") return;
+            if(this.game.hasTowerAtBlock(...this.mapPos)) return;
 
             // show build tower interface menu, and set this block to selected
             this.selected = true;
@@ -180,6 +181,15 @@ class Block extends GameObject {
         // this.onpointertap = () => {
         //     console.log(this._gid);
         // }
+    }
+
+    // optimization for getting targets
+    getBoundingSquare(distMult){ // distMult amount of blocks away from this position
+        const c = [this.x, this.y], s = this.center[0],
+              bs = this.blockSize[0] * distMult + s;
+
+              // minX, minY (top), maxX, maxY (bot)
+        return [c[0] - bs, c[1] - bs, c[0] + bs, c[1] + bs];
     }
 }
 
