@@ -72,9 +72,9 @@ class Bullet extends Projectile{
     // what happens when tween arrives
     arrive(){
         // damage the enemy base on tower stats
-        this.target.armor -= this.from.apr;
+        this.target.armor -= this.from.pen;
         this.target.damage(this.from.atk);
-        this.target.armor += this.from.apr;
+        this.target.armor += this.from.pen;
 
         this.killProjectile();
     }

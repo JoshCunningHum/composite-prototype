@@ -13,10 +13,60 @@ class Enemy extends GameObject{
             type: "A",
             health: 20,
             dmg: 1,
-            armor: 0,
+            armor: 1,
             speed: 7,
             m_reward: 1
         });
+
+        this.types.B = new Enemy({
+            label: "enemy_b",
+            type: "B",
+            health: 10,
+            dmg: 1,
+            armor: 0,
+            speed: 20,
+            m_reward: 1
+        });
+
+        this.types.C = new Enemy({
+            label: "enemy_c",
+            type: "C",
+            health: 60,
+            dmg: 2,
+            armor: 2,
+            speed: 7,
+            m_reward: 2
+        });
+
+        this.types.D = new Enemy({
+            label: "enemy_c",
+            type: "D",
+            health: 50,
+            dmg: 3,
+            armor: 10,
+            speed: 3,
+            m_reward: 5
+        });
+
+        this.types.MINI = new Enemy({
+            label: "enemy_mini",
+            type: "MINI",
+            health: 100,
+            dmg: 5,
+            armor: 12,
+            speed: 5,
+            m_reward: 15
+        })
+
+        this.types.BOSS = new Enemy({
+            label: "enemy_boss",
+            type: "BOSS",
+            health: 200,
+            dmg: 10,
+            armor: 50,
+            speed: 2,
+            m_reward: 50
+        })
     }
 
     sl; // time (ms) left for this enemy to spawn
@@ -103,6 +153,37 @@ class Enemy extends GameObject{
         if(this.health <= 0) this.die();
     }
 
+    multStat(wave_cycle){
+        this.ohp *= (4 * Math.log(wave_cycle) + 1) * (4 * Math.log(wave_cycle) / 30) + 1;
+        this.hp *= (4 * Math.log(wave_cycle) + 1) * (4 * Math.log(wave_cycle) / 30) + 1;
+
+        this.ohp = Math.ceil(this.ohp);
+        this.hp = Math.ceil(this.hp);
+
+        this.dmg *= Math.floor(Math.log(wave_cycle) + 1);
+
+        if(this.armor == 0 && wave_cycle >= 2) this.armor = 1;
+
+        this.armor *= Math.ceil(2 * Math.log(wave_cycle) + 1);
+
+        this.m_reward *= Math.log(wave_cycle) + 1;
+        this.m_reward = Math.floor(this.m_reward);
+
+        this.speed *= Math.ceil(2 * Math.log(wave_cycle) + 1);
+
+        const b_prop = {
+            health: this.ohp,
+            dmg: this.dmg,
+            armor: this.armor,
+            speed: this.speed,
+            m_reward: this.m_reward
+        };
+
+        Object.assign(this.prop, b_prop);
+
+        return this;
+    }
+
     dead = false;
 
     die(){
@@ -135,6 +216,7 @@ class Enemy extends GameObject{
     buffer = null;
 
     _initGeometry(){
+        console.log(this.prop);
         Geometry.ENEMY[this.type].bind(this.draw)();
         Geometry.ENEMY.hpBar.bind(this.hpBar)();
 

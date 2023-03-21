@@ -25,16 +25,16 @@ class Tower extends GameObject{
     // stats
     atk; // TODO: Add elemental damage
     spd; // attacks per second
-    rng; // range (map block size)
+    _rng; // range (map block size)
     trg; // target count (how many it can shoot at the same time) (INFINITE FOR TYPE B)
-    apr; // armor piercing, ignores specific amount of armor when hitting
+    pen; // armor piercing, ignores specific amount of armor when hitting
 
-    get range(){
-        return this.rng;
+    get rng(){
+        return this._rng;
     }
 
-    set range(val){
-        this.rng = val;
+    set rng(val){
+        this._rng = val;
         
         // change range finder scale
         if(!this._range_finder) return;
@@ -115,7 +115,7 @@ class Tower extends GameObject{
         // TODO: Once tower rotation is applied, rotate to the nearest
         
         // optimization: get preliminary targets within certain x and y values
-        const bounding = this.block.getBoundingSquare(this.range),
+        const bounding = this.block.getBoundingSquare(this.rng),
               p_targets = this.game.getEnemiesAtRange(...bounding);
 
         
@@ -144,7 +144,7 @@ class Tower extends GameObject{
     }
 
     get calc_range(){
-        return this.range * this.block.blockSize[0] + this.block.blockSize[0] / 2;
+        return this.rng * this.block.blockSize[0] + this.block.blockSize[0] / 2;
     }
 
     // should be overriden since different towers have different firing methods
@@ -159,14 +159,25 @@ class Tower extends GameObject{
 
         if(this._mod != null) this._mod.apply(b);
 
+        // console.log(b, this);
+
         Object.assign(this, b);
+
+        // refresh stats on mod menu
+        this.game.updateModElementStat(this);
+        this.game.updateModAvailable();
+        this.game.updateModEquipped(this);
     }
 
     _mod = null;
 
+    get mod_length(){
+        return this._mod == null ? 0 : this._mod.count();
+    }
+
     addMod(mod){
         // changes modded stats values
-        if(_mod == null) _mod = mod;
+        if(this._mod == null) this._mod = mod;
         else this._mod.addMod(mod);
 
         this.refreshStats();
@@ -175,6 +186,14 @@ class Tower extends GameObject{
     delMod(mod){
         if(this._mod.equals(mod)) this._mod = this._mod.mod;
         else this._mod.remove(mod); // recursively find that mod
+
+        this.refreshStats();
+
+        return mod; // returns the deleted mod
+    }
+
+    get modAsArray(){
+        return this._mod ? this._mod.extract([]) : [];
     }
 
     sell(){
@@ -198,9 +217,10 @@ class Quadra extends Tower{
             label: "t_quadra",
             atk: 5,
             spd: 2,
-            range: 1, // block size
+            rng: 1, // block size
             trg: 1,
-            apr: 0 // armor peircing
+            pen: 0, // armor peircing
+            type: "a"
         })
 
         this.block = block;
@@ -223,7 +243,8 @@ class Quadra extends Tower{
         this.onpointertap = function(ev){
             ev.stopPropagation();
 
-            this.game.deselectAll();
+            if(!this.game.__showing_mod_menu) this.game.deselectAll();
+            else return;
 
             this.selected = true;
 
@@ -256,9 +277,10 @@ class Apeira extends Tower{
             label: "t_apeira",
             atk: 2,
             spd: 1.75,
-            range: 0.8, // block size
+            rng: 0.8, // block size
             trg: Infinity,
-            apr: 0 // armor peircing
+            pen: 0, // armor peircing
+            type: "b"
         })
 
         this.block = block;
@@ -302,9 +324,9 @@ class Apeira extends Tower{
 
         // Circle tower instantly damages all enemies around them
         targets.forEach(t => {
-            t.apr -= this.apr;
+            t.armor -= this.pen;
             t.damage(this.atk);
-            t.apr += this.apr;
+            t.armor += this.pen;
         })
     }
 }

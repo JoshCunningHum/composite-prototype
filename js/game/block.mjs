@@ -165,7 +165,8 @@ class Block extends GameObject {
             evs.stopPropagation();
 
             // un select all other blocks
-            this.game.deselectAll();
+            if(!this.game.__showing_mod_menu) this.game.deselectAll();
+            else this.parent.deselectAll();
 
             // Only works on site type blocks
             if(this.label != "Site") return;

@@ -5,6 +5,8 @@ import { Enemy } from "./enemy.mjs";
 import { Wave } from "./wave.mjs";
 import { gsap } from "../engine/GSAP/index.mjs";
 import { Util } from "./util.mjs";
+import { Text } from "../engine/PIXI/pixi.mjs";
+import { Mod } from "./mod.mjs";
 
 // Acts as the game loop
 class Game{
@@ -43,6 +45,9 @@ class Game{
 
     i = {};
     interfaces = [];
+
+    // mod collection available
+    mods = [];
 
     /**
      * 
@@ -319,16 +324,19 @@ class Game{
                   font_size_detail = 20;
 
             // Wave Details
+            const wave_font_style = {
+                fontFamily: "ISO",
+                fontSize: font_size_btn,
+                stroke: "white",
+                strokeThickness: 1,
+                fill: "white",
+                align: "center"
+            }
+
             const w_ctCont = new GameObject("iwave_ctCont"),
                   w_ctBar = new GameObject("iwave_ctBar"),
-                  w_ctSkip = new TextObject("SKIP", {
-                    fontFamily: "ISO",
-                    fontSize: font_size_btn,
-                    stroke: "white",
-                    strokeThickness: 1,
-                    fill: "white",
-                    align: "center"
-                  });
+                  w_ctSkip = new TextObject("SKIP", wave_font_style),
+                  w_waveCount = new TextObject("", wave_font_style);
 
             
             // TODO: PIXI Exlusive Geometry Used
@@ -343,9 +351,15 @@ class Game{
                 if(this.wave) this.addMoney(this.wave.skip());
             }
 
+            this.__wave_count_object = w_waveCount;
+
+            w_waveCount.anchor.set(0.5, 0.5);
+            w_waveCount.position.set(...this.centerY(-this.height/2.5))
+
             w_ctCont.addChild(w_ctBar, w_ctSkip);
 
             this._addInterface(w_ctCont, this.menu_game);
+            this.menu_game.addChild(w_waveCount);
 
             const detail_font_style = {
                 fontFamily: "ISO",
@@ -355,6 +369,8 @@ class Game{
                 fill: "white",
                 align: "center"
               };
+
+
 
             // Economy
             const e_moneyCont = new GameObject("ieco_mCont"),
@@ -382,10 +398,14 @@ class Game{
 
             // TODO: PIXI Exlusive Geometry Used
             b_healthIco.beginFill(0xff3030)
-            .drawEllipse(...Array(4).fill(font_size_detail / 2.5))
+            .drawRegularPolygon(0, 7, font_size_detail / 1.5, 4, Math.PI)
             .endFill();
 
-            b_healthIco.position.set(5, 5);
+            b_healthIco.beginFill(0x1C1C1C)
+            .drawRegularPolygon(0, -1, 7, 4, Math.PI)
+            .endFill();
+
+            b_healthIco.position.set(6, 4);
 
             b_healthCont.addChild(b_healthTxt, b_healthIco);
             b_healthCont.position.x = this.centerX(-50)[0];
@@ -506,10 +526,38 @@ class Game{
 
         // MOD Interface (it's so big, that's what she said)
         {
-            const mod_menu = new GameObject("imod_menu"),
-                  exit = new TextObject("❌", {});
+            const menu_padding = 20,
+                  top_section = 230,
+                  st_style = {
+                    fontFamily: "ISO",
+                    fontSize: 15,
+                    stroke: "white",
+                    strokeThickness: 1,
+                    fill: "white",
+                    align: "center"
+                  }
 
-            const menu_padding = 20;
+            const mod_menu = new GameObject("imod_menu"),
+                  exit = new TextObject("❌", {}),
+                  type = new GameObject("imod_typeCont"),
+                  statCont = new GameObject("imod_statCont"),
+                  equipped = new GameObject("imod_equipped"),
+                  avail = new GameObject("imod_avail"),
+
+                  st_atk = new TextObject("ATK ", st_style),
+                  st_spd = new TextObject("SPD ", st_style),
+                  st_rng = new TextObject("RNG ", st_style),
+                  st_trg = new TextObject("TRG ", st_style),
+                  st_pen = new TextObject("PEN ", st_style),
+                  st_cap = new TextObject("CAP ", st_style),
+                  st_lvl = new TextObject("LVL ", {
+                    fontFamily: "ISO",
+                    fontSize: 20,
+                    stroke: "white",
+                    strokeThickness: 1,
+                    fill: "white",
+                    align: "center"
+                  });
 
             mod_menu._igroup = "tower_management";
 
@@ -520,10 +568,49 @@ class Game{
                 this.width - menu_padding * 2, this.height - menu_padding * 2
             ).beginFill();
 
+            
             // Position elements
             exit.anchor.set(0.5, 0.5);
             exit.position.set(...Array(2).fill(menu_padding * 2));
             exit.position.x = this.width - menu_padding * 2;
+
+            type.position.set(...Array(2).fill(menu_padding * 2 + 30));
+            type.position.y += 60;
+            type.position.x += 50;
+            statCont.position.set(...Array(2).fill(menu_padding * 2));
+            statCont.position.x = this.width / 2;
+
+            const st_lineHeight = st_style.fontSize + 10;
+
+            st_lvl.position.x = this.width / 8;
+
+            st_atk.position.y = 10 + st_lineHeight;
+            st_spd.position.y = 10 + st_lineHeight * 2;
+            st_rng.position.y = 10 + st_lineHeight * 3;
+            st_trg.position.y = 10 + st_lineHeight * 4;
+            st_pen.position.y = 10 + st_lineHeight * 5;
+
+            equipped.position.y = top_section + menu_padding;
+            equipped.position.x = menu_padding * 2;
+
+            avail.position.y = top_section + menu_padding;
+            avail.position.x = menu_padding * 2 + this.width / 2 - menu_padding * 2;
+
+            st_cap.anchor.set(0.5, 0.5);
+            st_cap.position.x = (this.width / 2 - menu_padding * 4) / 2;
+            st_cap.position.y = -menu_padding / 1.5;
+            
+
+            // create mod layout
+            equipped.beginFill(0x555555, 0.9)
+            .drawRect(
+                0, 0, this.width / 2 - menu_padding * 2, this.height / 8 * 5 - menu_padding
+            ).endFill();
+
+            avail.beginFill(0x444444, 0.9)
+            .drawRect(
+                0, 0, this.width / 2 - menu_padding * 2, this.height / 8 * 5 - menu_padding
+            ).endFill();
 
             // Element Events
             exit.eventMode = "static";
@@ -533,9 +620,30 @@ class Game{
                 this.deselectAll();
             }
 
-            mod_menu.addChild(exit);
+            // save references
+            this.__mod_menu = {
+                type: type,
+                stats: {
+                    atk: st_atk,
+                    spd: st_spd,
+                    rng: st_rng,
+                    trg: st_trg,
+                    pen: st_pen,
+                    lvl: st_lvl,
+                    cap: st_cap
+                },
+                mod_equip: equipped,
+                mod_avail: avail,
+                style: {
+                    md_cont_h: menu_padding
+                }
+            }
 
-            // mod_menu.hide();
+            equipped.addChild(st_cap);
+            statCont.addChild(st_lvl, st_atk, st_spd, st_rng, st_trg, st_pen);
+            mod_menu.addChild(exit, type, statCont, equipped, avail);
+
+            mod_menu.hide();
             this._addInterface(mod_menu, this.menu_game);
         }
     }
@@ -547,16 +655,153 @@ class Game{
             spd: null,
             rng: null,
             trg: null,
-            apr: null,
+            pen: null,
             lvl: null,
             cap: null
         },
-
+        mod_equip: null,
+        mod_avail: null,
     }
 
     // base on selected tower
     setModMenuElements(){
+        // get selected tower
+        const t = this.towers.find(t => t.selected);
 
+        this.updateModElementStat(t);
+        const type = this.__mod_menu.type;
+
+        type.removeChildren();
+
+        // Create type graphic
+        const g = new GameObject("imod_typeGraphic"),
+              g_type = t.type == "b" ? "CIRCLE" : "REG",
+              side = t.type == "a" ? 4 : t.type == "b" ? "b" :
+                     t.type == "c" ? 5 : 6;
+
+        Geometry.TOWER[g_type].bind(g)(50, side, t.type);
+
+        this.updateModEquipped(t);
+        this.updateModAvailable();
+
+        type.addChild(g);
+    }
+
+    updateModElementStat(t){
+        
+        // apply stats and type
+        const {stats: stat} = this.__mod_menu;
+
+        stat.atk.text = `ATK - ${t.atk.toFixed(2)}`;
+        stat.spd.text = `SPD - ${t.spd.toFixed(2)}`;
+        stat.rng.text = `RNG - ${t.rng.toFixed(2)}`;
+        stat.trg.text = `TRG - ${t.trg.toFixed(2)}`;
+        stat.pen.text = `PEN - ${t.pen.toFixed(2)}`;
+        stat.lvl.text = `LVL ${t.lvl}`;
+        stat.cap.text = `CAP ${t.mod_length}/${t.cap}`;
+    }
+
+    updateModEquipped(t){
+        const {mod_equip: eq, style: s}  = this.__mod_menu;
+
+        const cap_go = this.__mod_menu.stats.cap;
+        eq.removeChildren();
+        eq.addChild(cap_go);
+
+        const ms = t.modAsArray;
+
+        ms.forEach((e, i) => {
+            const m = new GameObject("mequipped_cont"),
+                  m_h = 50, m_b = 3;
+
+            // TODO: PIXI EXLUSIVE DRAW
+            m.beginFill(0x0c9623)
+            .drawRect(0, 0, this.width / 2 - s.md_cont_h * 2, m_h)
+            .endFill();
+
+            m.beginFill(0x086017)
+            .drawRect(m_b, m_b, this.width / 2 - s.md_cont_h * 2 - m_b * 2, m_h - m_b*2)
+            .endFill();
+
+            // TEXT
+            const txt = new TextObject(e.label, {
+                fontFamily: "ISO",
+                fontSize: 15,
+                stroke: "white",
+                strokeThickness: 1,
+                fill: "white",
+                align: "center"
+            })
+
+            txt.anchor.set(0.5, 0.5);
+            txt.position.set(...m.center);
+
+            m.addChild(txt);
+            m.position.y = i * m_h; 
+
+            // add event to remove
+            m.eventMode = "static";
+            m.onpointertap = () => {
+                this.mods.push(e);
+                t.delMod(e);
+                e.mod = null; // remove mod inside
+            }
+
+            eq.addChild(m);
+        })
+    }
+
+    // available
+    updateModAvailable(){
+        const {mod_avail: av, style: s} = this.__mod_menu;
+
+        av.removeChildren();
+
+        this.mods.forEach((e, i) => {
+            const m = new GameObject("mavail_cont"),
+                  m_h = 50, m_b = 2;
+
+            // TODO: PIXI EXLUSIVE DRAW
+            m.beginFill(0x111111)
+            .drawRect(0, 0, this.width / 2 - s.md_cont_h * 2, m_h)
+            .endFill();
+
+            m.beginFill(0x525252)
+            .drawRect(2, i == 0 ? 2 : 0, this.width / 2 - s.md_cont_h * 2 - m_b * 1.5, m_h - m_b - (i == 0 ? 2 : 0))
+            .endFill();
+
+            // TEXT
+            const txt = new TextObject(e.label, {
+                fontFamily: "ISO",
+                fontSize: 15,
+                stroke: "white",
+                strokeThickness: 1,
+                fill: "white",
+                align: "center"
+            })
+
+            txt.anchor.set(0.5, 0.5);
+            txt.position.set(...m.center);
+
+            m.position.y = i * m_h; 
+
+            m.addChild(txt);
+
+            // add event to add mods to the tower
+            m.eventMode = "static";
+            m.onpointertap = () => {
+                // add mod to the tower, unless if it has full mod capacity
+                const st = this.towers.find(tower => tower.selected);
+                if(st.cap <= st.mod_length) return;
+
+                const i = this.mods.findIndex(md => md.id == e.id),
+                      tmod = this.mods.splice(i, 1)[0];
+
+                st.addMod(tmod);
+            }
+
+            av.addChild(m);
+        })
     }
 
     // Waves
@@ -573,6 +818,8 @@ class Game{
     set wave_count(val){
         this.wc = val;
         // modify text object content here
+
+        this.__wave_count_object.text = `WAVE ${val}`;
     }
 
     get wave_countdown(){
@@ -604,6 +851,19 @@ class Game{
             this.money = defs.starting_money; // reset money
             this.health = defs.health;
 
+            // DEV: Add mods
+            const testMod = new Mod({prop: "atk", mode: "+", value: 2});
+
+            this.mods.push(
+                testMod.clone,
+                testMod.clone,
+                testMod.clone.set("prop", "rng").set("value", 0.5),
+                testMod.clone.set("mode", "*").set("value", 0.2),
+                testMod.clone.set("prop", "spd").set("mode", "*").set("value", .25),
+                testMod.clone.set("prop", "trg").set("value", 1),
+                testMod.clone.set("prop", "trg").set("value", 1),
+            )
+
             this.showMenu("menu_mapPreload");
 
             // Generate Map
@@ -624,9 +884,10 @@ class Game{
 
 
         // Initialize First Wave
+        const enemyWave = Wave.getWave(1);
         this.wave = new Wave({
             left: defs.first_wave_time, 
-            queue: Wave.eqs.A, 
+            queue: enemyWave, 
             skipValue: 20,
             game: this,
         })
@@ -640,6 +901,15 @@ class Game{
         // initiates creation of another wave, resetting wave timer
         console.log("Wave is done!");
         this.wave = null;
+
+        // immediately start another wave
+        const enemyWave = Wave.getWave(this.wave_count + 1);
+        this.wave = new Wave({
+            left: Game.defaults.first_wave_time + this.wave_count * 2, 
+            queue: enemyWave, 
+            skipValue: 20 + this.wave_count,
+            game: this,
+        })
     }
 
     // Loop (Add this to engine tick event)
@@ -750,20 +1020,24 @@ class Game{
 
     upgradeTower(){
         const t = this.towers.find(t => t.selected);
+        this.hide_i("iman_towerCont");
         if(t == null) return;
         this.deselectAll();
         if(t.upgrade_cost > this.money) return;
         this.money -= t.upgrade_cost;
         t.lvl++;
+
     }
 
     sellTower(){
         const t = this.towers.find(t => t.selected);
-        console.log("TEST");
         if(t == null) return;
         const value = t.sell();
         console.log(value);
         this.addMoney(value);
+
+        this.hide_i()
+        this.deselectAll();
     }
 
     damage(value){

@@ -134,7 +134,23 @@ class Geometry{
     // ENEMY
     static {
         const c_a = 0x0ec74c,
-              cs_a = 0x282828,
+              cs_a = 0x0f7a33,
+
+              c_b = 0x0c7a99,
+              cs_b = 0x097487,
+
+              c_c = 0xbabc20,
+              cs_c = 0x89891a,
+
+              c_d = 0xbf6115,
+              cs_d = 0x894511,
+
+              c_mini = 0xbc1a1a,
+              cs_mini = 0x7f1313,
+
+              c_boss = 0xa018c9,
+              cs_boss = 0x6f1889,
+
               c_hp = 0xed2222,
               def_size = 10,
               def_stroke = 5;
@@ -146,11 +162,86 @@ class Geometry{
             this._sc = cs_a;
 
             this.beginFill(cs_a)
-            .drawRegularPolygon(0, 0, def_size, 3, Math.PI)
+            .drawRegularPolygon(0, 0, def_size, 4, Math.PI)
             .endFill();
 
             this.beginFill(c_a)
+            .drawRegularPolygon(0, 0, def_size - def_stroke, 4, Math.PI)
+            .endFill();
+        }
+
+        this.ENEMY.B = function(){
+            this.def_c = c_b;
+            this.def_sc = cs_b;
+            this._c = c_b;
+            this._sc = cs_b;
+
+            this.beginFill(cs_b)
+            .drawRegularPolygon(0, 0, def_size, 3, Math.PI)
+            .endFill();
+
+            this.beginFill(c_b)
             .drawRegularPolygon(0, 0, def_size - def_stroke, 3, Math.PI)
+            .endFill();
+        }
+
+        this.ENEMY.C = function(){
+            this.def_c = c_c;
+            this.def_sc = cs_c;
+            this._c = c_c;
+            this._sc = cs_c;
+
+            this.beginFill(cs_c)
+            .drawEllipse(0, 0, def_size, def_size)
+            .endFill();
+
+            this.beginFill(c_c)
+            .drawEllipse(0, 0, def_size - def_stroke, def_size - def_stroke)
+            .endFill();
+        }
+
+        this.ENEMY.D = function(){
+            this.def_c = c_d;
+            this.def_sc = cs_d;
+            this._c = c_d;
+            this._sc = cs_d;
+
+            this.beginFill(cs_d)
+            .drawRegularPolygon(0, 0, def_size, 5, Math.PI)
+            .endFill();
+
+            this.beginFill(c_d)
+            .drawRegularPolygon(0, 0, def_size - def_stroke, 5, Math.PI)
+            .endFill();
+        }
+
+        this.ENEMY.MINI = function(){
+            this.def_c = c_mini;
+            this.def_sc = cs_mini;
+            this._c = c_mini;
+            this._sc = cs_mini;
+
+            this.beginFill(cs_mini)
+            .drawRegularPolygon(0, 0, def_size * 1.5, 4, Math.PI)
+            .endFill();
+
+            this.beginFill(c_mini)
+            .drawRegularPolygon(0, 0, def_size * 1.5 - def_stroke, 4, Math.PI)
+            .endFill();
+        }
+
+        this.ENEMY.BOSS = function(){
+            this.def_c = c_boss;
+            this.def_sc = cs_boss;
+            this._c = c_boss;
+            this._sc = cs_boss;
+
+            this.beginFill(cs_boss)
+            .drawRegularPolygon(0, 0, def_size * 1.5, 6, Math.PI)
+            .endFill();
+
+            this.beginFill(c_boss)
+            .drawRegularPolygon(0, 0, def_size * 1.5 - def_stroke, 6, Math.PI)
             .endFill();
         }
 
