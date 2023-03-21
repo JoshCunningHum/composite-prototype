@@ -118,11 +118,6 @@ class Tower extends GameObject{
         const bounding = this.block.getBoundingSquare(this.rng),
               p_targets = this.game.getEnemiesAtRange(...bounding);
 
-        
-        if(this.test){
-            console.log(p_targets);
-            this.test = false;
-        }    
 
         // filter enemies by entering required distance to fire, sort by distance, slice by how many targets the tower can fire at the same time
         const targets = p_targets.filter(e => {
@@ -254,8 +249,6 @@ class Quadra extends Tower{
 
     fire(targets){
         if(targets.length == 0) return;
-
-        console.log("FIRED");
 
         // Square tower uses projects, so we access game and add projectiles in there
         targets.forEach(t => {

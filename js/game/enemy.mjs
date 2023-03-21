@@ -216,7 +216,6 @@ class Enemy extends GameObject{
     buffer = null;
 
     _initGeometry(){
-        console.log(this.prop);
         Geometry.ENEMY[this.type].bind(this.draw)();
         Geometry.ENEMY.hpBar.bind(this.hpBar)();
 

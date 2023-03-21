@@ -352,8 +352,6 @@ class Wave{
         // queue contains [enemy type, quantity] each
         this.enemyQueue = queue;
 
-        console.log(this.enemyQueue.map(e => e.spawnLeft));
-
         this.skipValue = skipValue;
         
         this.game = game;

@@ -161,8 +161,6 @@ class Game{
     hide_i(label){
         const t = this.interfaces.find(f => f.label == label);
         if(t._igroup) this.interfaces.filter(f => f._igroup == t._igroup).forEach(i => i.hide());
-
-        console.log(t);
     }
 
     get_i(label){
@@ -978,12 +976,14 @@ class Game{
                 Tower = Apeira;
                 break;
             case "C":
-                Tower = Penta;
+                Tower = null;
                 break;
             case "D":
-                Tower = Hexa;
+                Tower = null;
                 break;
         }
+
+        if(Tower == null) return;
 
         // check for cost
         if(this.money < Tower.cost){
@@ -1033,10 +1033,9 @@ class Game{
         const t = this.towers.find(t => t.selected);
         if(t == null) return;
         const value = t.sell();
-        console.log(value);
         this.addMoney(value);
 
-        this.hide_i()
+        this.hide_i("iman_towerCont");
         this.deselectAll();
     }
 
