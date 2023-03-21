@@ -1032,6 +1032,15 @@ class Game{
     sellTower(){
         const t = this.towers.find(t => t.selected);
         if(t == null) return;
+
+        // remove all mods from the tower and turn it back in the mods array
+        const t_mods = t.modAsArray;
+
+        t_mods.forEach(tmod => {
+            this.mods.push(tmod);
+            tmod.mod = null;
+        })
+
         const value = t.sell();
         this.addMoney(value);
 
