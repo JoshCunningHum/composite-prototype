@@ -22,4 +22,4 @@ const game = new Game(
 
 // Initialize the game
 game._init();
-game._start();
+// game._start();

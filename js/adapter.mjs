@@ -99,7 +99,9 @@ class Geometry{
             c_d: 0xffa54c
         }
 
-        const def_size = 10; // radius
+        const def_size = 10, // radius
+              c_range = 0xffffff,
+              c_range_thick = 1;
 
         this.TOWER.REG = function(radius = 10, sides = 4, type = "build"){
             radius = radius * 4 / sides;
@@ -115,6 +117,16 @@ class Geometry{
 
             this.beginFill(cs[`c_${type}`])
             .drawEllipse(0, 0, radius / 1.5, radius / 1.5)
+            .endFill();
+        }
+
+        this.TOWER.RANGE = function(radius = 10){
+            this.beginFill(c_range)
+            .drawEllipse(0, 0, radius, radius)
+            .endFill();
+
+            this.beginHole()
+            .drawEllipse(0, 0, ...Array(2).fill(radius - c_range_thick))
             .endFill();
         }
     }
@@ -146,6 +158,30 @@ class Geometry{
             this.beginFill(c_hp)
             .drawRect(-def_size, def_size, def_size * 2, 2)
             .endFill();
+        }
+    }
+
+    // PROJECTILE
+    static {
+        const c_bullet = 0xffffff,
+              c_wave = 0x999999;
+
+        this.PROJECTILE.BULLET = function(){
+            this.beginFill(c_bullet)
+            .drawRect(0, 0, 2, 2)
+            .endFill();
+        }
+
+        this.PROJECTILE.WAVE = function(){
+            const {x, y, __tower_radius} = this.tower;
+
+            this.beginFill(c_wave)
+            .drawEllipse(0, 0, __tower_radius, __tower_radius)
+            .endFill();
+
+            this.beginHole(c_wave)
+            .drawEllipse(0, 0, __tower_radius - 1, __tower_radius - 1)
+            .endHole();
         }
     }
 

@@ -165,11 +165,12 @@ class Block extends GameObject {
             evs.stopPropagation();
 
             // un select all other blocks
-            this.parent.deselectAll();
+            this.game.deselectAll();
 
             // Only works on site type blocks
             if(this.label != "Site") return;
             if(this.game.hasTowerAtBlock(...this.mapPos)) return;
+            if(this.game.__showing_mod_menu) return;
 
             // show build tower interface menu, and set this block to selected
             this.selected = true;

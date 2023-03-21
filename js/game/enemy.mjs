@@ -13,6 +13,7 @@ class Enemy extends GameObject{
             type: "A",
             health: 20,
             dmg: 1,
+            armor: 0,
             speed: 7,
             m_reward: 1
         });
@@ -96,14 +97,16 @@ class Enemy extends GameObject{
     // TODO: Add damage types
     damage(dmg){
         // reduce damage from armor
-        dmg.value *= 1 - this.dmgReduction;
+        dmg *= 1 - this.dmgReduction;
+        this.health -= dmg;
 
-        if(this.health <= 0) die();
+        if(this.health <= 0) this.die();
     }
 
     dead = false;
 
     die(){
+        if(this.dead) return; // if already dead, don't die again
         this.dead = true;
 
         // TODO: PIXI JS Exlusive
@@ -144,6 +147,7 @@ class Enemy extends GameObject{
 
     move(){
         if(this.pathIndex >= this.path.length) return;
+        if(this.dead) return; // if dead, don't move lol
 
         const nb = this.path[this.pathIndex];
 

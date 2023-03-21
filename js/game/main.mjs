@@ -12,7 +12,7 @@ class Game{
         mapCols: 10,
         mapRows: 12,
         first_wave_time: 7,
-        starting_money: 50,
+        starting_money: 150,
         health: 20
     }
 
@@ -20,6 +20,20 @@ class Game{
         const {mapCols, mapRows} = this.defaults;
 
         this.defaults.minPath = mapCols * mapRows / 3;
+    }
+
+    _health;
+
+    get health(){
+        return this._health;
+    }
+
+    set health(val){
+        this._health = val;
+
+        // change interface text
+        const _int = this.get_i("ibase_healthCont");
+        _int.children[0].text = val;
     }
     
     map = null;
@@ -124,20 +138,36 @@ class Game{
     }
 
     show_i(label){
+        if(this.__showing_mod_menu) return; // don't show anything when mod menu is open unless it is closed, char special
+
         const t = this.interfaces.find(f => f.label == label);
         if(t._igroup) this.interfaces.filter(f => f._igroup == t._igroup).forEach(i => i.hide());
+    
+        // sliding animation
+        t.x = -this.width;
         t.show();
+
+        const ox = t._iox ? t._iox : 0;
+
+        gsap.to(t, {x: ox, duration: 0.5});
     }
 
     // also hides interface in the same group
     hide_i(label){
         const t = this.interfaces.find(f => f.label == label);
         if(t._igroup) this.interfaces.filter(f => f._igroup == t._igroup).forEach(i => i.hide());
-        t.hide();
+
+        console.log(t);
     }
 
     get_i(label){
         return this.interfaces.find(f => f.label == label);
+    }
+
+
+    deselectAll(){
+        this.map.deselectAll();
+        this.towers.forEach(t => t.selected = false);
     }
 
     // Initialization
@@ -317,16 +347,18 @@ class Game{
 
             this._addInterface(w_ctCont, this.menu_game);
 
+            const detail_font_style = {
+                fontFamily: "ISO",
+                fontSize: font_size_detail,
+                stroke: "white",
+                strokeThickness: 1,
+                fill: "white",
+                align: "center"
+              };
+
             // Economy
             const e_moneyCont = new GameObject("ieco_mCont"),
-                  e_moneyTxt = new TextObject("0", {
-                    fontFamily: "ISO",
-                    fontSize: font_size_detail,
-                    stroke: "white",
-                    strokeThickness: 1,
-                    fill: "white",
-                    align: "center"
-                  }),
+                  e_moneyTxt = new TextObject("0", detail_font_style),
                   e_moneyIco = new GameObject("ieco_mIcon");
 
             e_moneyTxt.position.x = font_size_detail + 5;
@@ -339,10 +371,28 @@ class Game{
             e_moneyIco.position.set(5, 5);
 
             e_moneyCont.addChild(e_moneyTxt, e_moneyIco);
-
             this._addInterface(e_moneyCont, this.menu_game);
 
-            // Tower Build Menu
+            // TODO: Base
+            const b_healthCont = new GameObject("ibase_healthCont"),
+                  b_healthTxt = new TextObject("HEALTH", detail_font_style),
+                  b_healthIco = new GameObject("ibase_healthIcon");
+
+            b_healthTxt.position.x = font_size_detail + 5;
+
+            // TODO: PIXI Exlusive Geometry Used
+            b_healthIco.beginFill(0xff3030)
+            .drawEllipse(...Array(4).fill(font_size_detail / 2.5))
+            .endFill();
+
+            b_healthIco.position.set(5, 5);
+
+            b_healthCont.addChild(b_healthTxt, b_healthIco);
+            b_healthCont.position.x = this.centerX(-50)[0];
+
+            this._addInterface(b_healthCont, this.menu_game);
+
+            // Tower Build Menu -------------------------
             const b_towerCont = new GameObject("ibuild_towerCont"),
                   b_towerA = new GameObject("ibuild_towerA"),
                   b_towerB = new GameObject("ibuild_towerB"),
@@ -380,10 +430,7 @@ class Game{
             b_towerB.eventMode = "static";
             b_towerC.eventMode = "static";
             b_towerD.eventMode = "static";
-            b_towerA.onpointertap = (evs) => {
-                evs.stopPropagation();
-                this.buildTower("A")
-            };
+            b_towerA.onpointertap = () => this.buildTower("A");
             b_towerB.onpointertap = () => this.buildTower("B");
             b_towerC.onpointertap = () => this.buildTower("C");
             b_towerD.onpointertap = () => this.buildTower("D");
@@ -393,13 +440,122 @@ class Game{
             b_towerCont.hide();
             this._addInterface(b_towerCont, this.menu_game);
 
-            // hide all interfaces if clicking on black space
-            this.menu_game.onpointertap = (evs) => {
-                // evs.stopPropagation();
-                console.log("GAME MENU CLICK!");
-                this.hide_i("ibuild_towerCont");
+            // Tower Management Menu -------------------------
+            const m_towerCont = new GameObject("iman_towerCont"),
+                  m_towerMod = new GameObject("iman_towerMod"),
+                  m_towerSell = new GameObject("iman_towerSell"),
+                  m_towerUpg = new GameObject("iman_towerUpg");
+
+            m_towerCont._igroup = "tower_management";
+            m_towerCont.position.copyFrom(b_towerCont.position);
+
+            const m_btndim = [ this.width / 3, this.map.blockHeight + 15],
+                  m_btnHalf = m_btndim.map(e => e /= 2),
+                  m_btnHalfN = m_btnHalf.map(e => -e),
+                  m_cMod = 0x444444, m_cSell = 0x9b1111, m_cUpg = 0x10a524,
+                  m_txtStyle = {
+                    fontFamily: "ISO",
+                    fontSize: font_size_detail,
+                    stroke: "white",
+                    strokeThickness: 1,
+                    fill: "white",
+                    align: "center"
+                  };
+
+            // set button boxes
+            m_towerMod.beginFill(m_cMod).drawRect(...m_btnHalfN, ...m_btndim).endFill();
+            m_towerSell.beginFill(m_cSell).drawRect(...m_btnHalfN, ...m_btndim).endFill();
+            m_towerUpg.beginFill(m_cUpg).drawRect(...m_btnHalfN, ...m_btndim).endFill();
+
+            // set button texts
+            const m_towerModTxt = new TextObject("MOD", m_txtStyle),
+                  m_towerSellTxt = new TextObject("SELL", m_txtStyle),
+                  m_towerUpgTxt = new TextObject("UPGRADE", m_txtStyle);
+
+            m_towerModTxt.anchor.set(0.5, 0.5);
+            m_towerSellTxt.anchor.set(0.5, 0.5);
+            m_towerUpgTxt.anchor.set(0.5, 0.5);
+
+            m_towerMod.addChild(m_towerModTxt);
+            m_towerSell.addChild(m_towerSellTxt);
+            m_towerUpg.addChild(m_towerUpgTxt);
+
+            // set button positions
+            m_towerUpg.position.set(...m_btnHalf)
+            m_towerMod.position.set(m_btnHalf[0] + m_btndim[0], m_btnHalf[1]);
+            m_towerSell.position.set(m_btnHalf[0] + m_btndim[0] * 2, m_btnHalf[1]);
+
+            // set button events
+            m_towerMod.eventMode = "static";
+            m_towerSell.eventMode = "static";
+            m_towerUpg.eventMode = "static";
+            m_towerSell.onpointertap = () => this.sellTower();
+            // TODO: MOD MENU HERE
+            m_towerMod.onpointertap = () => {
+                this.setModMenuElements();
+                this.show_i("imod_menu");
+                this.__showing_mod_menu = true;
             }
+            m_towerUpg.onpointertap = () => this.upgradeTower();
+
+            m_towerCont.addChild(m_towerUpg, m_towerMod, m_towerSell);
+
+            m_towerCont.hide();
+            this._addInterface(m_towerCont, this.menu_game);
         }
+
+        // MOD Interface (it's so big, that's what she said)
+        {
+            const mod_menu = new GameObject("imod_menu"),
+                  exit = new TextObject("❌", {});
+
+            const menu_padding = 20;
+
+            mod_menu._igroup = "tower_management";
+
+            // TODO: PIXI EXCLUSIVE DRAW
+            mod_menu.beginFill(0x333333, 0.75)
+            .drawRect(
+                menu_padding, menu_padding,
+                this.width - menu_padding * 2, this.height - menu_padding * 2
+            ).beginFill();
+
+            // Position elements
+            exit.anchor.set(0.5, 0.5);
+            exit.position.set(...Array(2).fill(menu_padding * 2));
+            exit.position.x = this.width - menu_padding * 2;
+
+            // Element Events
+            exit.eventMode = "static";
+            exit.onpointertap = () => {
+                this.hide_i("imod_menu");
+                this.__showing_mod_menu = false;
+                this.deselectAll();
+            }
+
+            mod_menu.addChild(exit);
+
+            // mod_menu.hide();
+            this._addInterface(mod_menu, this.menu_game);
+        }
+    }
+
+    __mod_menu = {
+        type: null, // container for the graphics later
+        stats: {
+            atk: null,
+            spd: null,
+            rng: null,
+            trg: null,
+            apr: null,
+            lvl: null,
+            cap: null
+        },
+
+    }
+
+    // base on selected tower
+    setModMenuElements(){
 
     }
 
@@ -446,6 +602,7 @@ class Game{
         // Reset values
         {
             this.money = defs.starting_money; // reset money
+            this.health = defs.health;
 
             this.showMenu("menu_mapPreload");
 
@@ -458,9 +615,7 @@ class Game{
 
             // Add on dmg event
             this.base_block.dmg = (obj) => {
-                // do dmg on the base
-                // obj being the enemy
-                console.log(`Base dmg by: ${obj.dmg}`);
+                this.damage(obj.dmg);
             }
         }
         
@@ -498,6 +653,11 @@ class Game{
         // get all towers to start shootin
         this.towers.forEach(t => {
             t.check(delta);
+        })
+
+        // make all projectiles do their thin (homing/follow)
+        this.projectiles.forEach(p => {
+            p.tick();
         })
     }
 
@@ -539,10 +699,7 @@ class Game{
         let Tower = null;
 
         const selected = this.map.selectedBlock;
-
-        // check first if tower is already existing in that block
         
-
         switch(type){
             case "A":
                 Tower = Quadra;
@@ -575,11 +732,42 @@ class Game{
         this.money -= Tower.cost;
 
         // close all interface and deselect all blocks
+        this.hide_i("ibuild_towerCont");
         this.map.deselectAll();
     }
 
+    // used for homing purposes
+    addProjectile(Projectile, tower, target){
+        // projectile here is the class
+        const p = new Projectile(tower, target);
+        p._initProjectile();
+        this.projectile_plane.addChild(p);
+    }
+
+    addEffect(effect){
+        this.effects_plane.addChild(effect);
+    }
+
+    upgradeTower(){
+        const t = this.towers.find(t => t.selected);
+        if(t == null) return;
+        this.deselectAll();
+        if(t.upgrade_cost > this.money) return;
+        this.money -= t.upgrade_cost;
+        t.lvl++;
+    }
+
     sellTower(){
-        
+        const t = this.towers.find(t => t.selected);
+        console.log("TEST");
+        if(t == null) return;
+        const value = t.sell();
+        console.log(value);
+        this.addMoney(value);
+    }
+
+    damage(value){
+        this.health -= value;
     }
 
     getEnemiesAtRange(minX, minY, maxX, maxY){
