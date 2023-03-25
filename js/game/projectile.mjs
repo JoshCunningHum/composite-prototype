@@ -51,6 +51,9 @@ class Bullet extends Projectile{
         this.tl = gsap.timeline({onComplete: this.arrive, callbackScope: this})
         .set(this, {x: this.from.x, y: this.from.y})
         .to(this, {x: this.target.x, y:this.target.y, duration: this.lt});
+
+        if(this.parent == null) return;
+        this.parent.game.tl.add(this.tl);
     }
 
     tick(){
@@ -97,13 +100,13 @@ class Field extends GameObject{
         const sv = this.tower.calc_range / this.tower.__tower_radius;
 
         // initialize timeline
-        gsap.to(this.scale, {
+        this.parent.game.tl.to(this.scale, {
             x: sv, y: sv, duration: .5,
             onComplete: () => {
                 this.parent.removeChild(this);
             },
             callbackScope: this
-        })
+        }, this.parent.game.tl.totalTime());
 
     }
 }

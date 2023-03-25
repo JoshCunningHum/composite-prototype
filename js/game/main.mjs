@@ -57,6 +57,8 @@ class Game{
         this.interfaces.push(infc);
         this.i[infc.label] = infc;
 
+        infc.game = this;
+
         if(!menu) return;
         menu.addChild(infc);
     }
@@ -109,7 +111,16 @@ class Game{
         });
 
         this.tl = gsap.timeline({
-            autoRemoveChildren: true
+            sortChildren: false, 
+            defaults: {
+                duration: .5,
+                overwrite: false,
+                delay: 0
+
+            }, 
+            autoRemoveChildren: true, 
+            id:"game_timeline", 
+            smoothChildTiming: true
         })
     }
 
@@ -175,6 +186,8 @@ class Game{
 
     // Initialization
     _init(){
+
+        console.log(gsap.globalTimeline, this.tl);
         
         // Initialize local saved values (like settings etc)
 
@@ -277,6 +290,11 @@ class Game{
         this.effects_plane = new GameObject("effects_container");
         this.projectile_plane = new GameObject("projectile_container");
 
+        this.enemy_plane.game = this;
+        this.tower_plane.game = this;
+        this.effects_plane.game = this;
+        this.projectile_plane.game = this;
+
         const [
             _ep, _tp, _fxp, _pp
         ] = [this.enemy_plane, this.tower_plane, this.effects_plane, this.projectile_plane];
@@ -368,7 +386,81 @@ class Game{
                 align: "center"
               };
 
+            // Speed Control
+            const s_cont = new GameObject("ispeed_cont"),
+                  s_mult = new GameObject("ispeed_mult"),
+                  s_multTxt = new TextObject("x1", detail_font_style),
+                  s_toggle = new GameObject("ispeed_toggle"),
+                  s_toggleTxt = new Text("▐ ▌", detail_font_style);
 
+            s_multTxt.anchor.set(0.5, 0.5);
+            s_toggleTxt.anchor.set(0.5, 0.5);
+
+            s_toggleTxt.scale.set(.7, .7);
+
+
+            s_mult.addChild(s_multTxt);
+            s_toggle.addChild(s_toggleTxt);
+
+            const s_box = font_size_detail * 1.5,
+            s_btnDim = [
+                ...Array(2).fill(-s_box / 2),
+                ...Array(2).fill(s_box)
+            ], s_btnHole = [
+                ...Array(2).fill(s_btnDim[0] + 1),
+                ...Array(2).fill(s_btnDim[2] - 2)
+            ];
+
+            s_mult.position.x += s_box + 5;
+
+            // TODO: PIXI EXLUSIVE DRAWING
+            s_mult.beginFill(0xffffff).drawRect(...s_btnDim).endFill();
+            s_mult.beginFill(0x1C1C1C).drawRect(...s_btnHole).endHole();
+
+            s_toggle.beginFill(0xffffff).drawRect(...s_btnDim).endFill();
+            s_toggle.beginFill(0x1C1C1C).drawRect(...s_btnHole).endHole();
+
+            s_mult.eventMode = "static";
+            s_toggle.eventMode = "static";
+
+            this.speed_mult = 1;
+            this.paused = false;
+
+            s_mult.onpointertap = () => {
+                switch(this.speed_mult){
+                    case 1:
+                        s_multTxt.text = "x2";
+                        this.speed_mult = 2;
+                        break;
+                    case 2:
+                        s_multTxt.text = "x4";
+                        this.speed_mult = 4;
+                        break;
+                    case 4:
+                        s_multTxt.text = "x1";
+                        this.speed_mult = 1;
+                        break;
+                }
+            }
+
+            s_toggle.onpointertap = () => {
+                if(this.paused){
+                    s_toggleTxt.text = "▐ ▌";
+                    s_toggleTxt.scale.set(0.7, 0.7);
+                    this.paused = false;
+                }else{
+                    s_toggleTxt.text = "►";
+                    s_toggleTxt.scale.set(1, 1);
+                    this.paused = true;
+                }
+            }
+
+            s_cont.addChild(s_toggle, s_mult);
+
+            s_cont.position.x = this.width - s_box * 2 + 5;
+            s_cont.position.y = this.map.position.y + s_box;
+
+            this._addInterface(s_cont, this.menu_game);
 
             // Economy
             const e_moneyCont = new GameObject("ieco_mCont"),
@@ -910,10 +1002,27 @@ class Game{
         })
     }
 
+    _isOnPause = false;
+
+    set paused(val){
+        this._isOnPause = val;
+
+        if(val) this.tl.pause();
+        else this.tl.resume();
+    }
+
+    get paused(){
+        return this._isOnPause;
+    }
+
     // Loop (Add this to engine tick event)
     // Only handle game events, not rendering, as the engine does that
     _loop(delta){
+        if(this.paused) return;
+
         // console.log(delta * 1000);
+        delta *= this.speed_mult || 1;
+        this.tl.timeScale(this.speed_mult || 1);
 
         // get on countdown wave to reduce time then start spawning
         if(this.wave) this.wave_countdown = this.wave.reduce(delta);

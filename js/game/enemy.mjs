@@ -204,15 +204,10 @@ class Enemy extends GameObject{
         this.path = path;
         
         this._initGeometry();
-        this._startMoveSequence();
-    }
-
-    _startMoveSequence(){
         this.move();
     }
 
     pathIndex = 0;
-    move_sequence = null;
     buffer = null;
 
     _initGeometry(){
@@ -240,10 +235,9 @@ class Enemy extends GameObject{
             r: (nb.dirTo != undefined ? nb.dirTo * 90 : this.buffer.r)
         };
 
-        this.move_sequence = gsap.to( this.buffer, {
+        this.game.tl.to( this.buffer, {
             ...target,
-            id: `${this._gid}_ms`,
-            duration: 10 / this.speed, // TODO: Change base on enemy speed
+            duration: 10 / this.speed,
 
             ease: "linear",
 
@@ -254,6 +248,7 @@ class Enemy extends GameObject{
             },
             onUpdateParams: [this.buffer],
             onComplete: () => {
+                this.pathIndex++;
                 // check if already in the base, if yes, then do dmg
                 if(nb.label == "Base"){
                     nb.dmg(this);
@@ -261,9 +256,8 @@ class Enemy extends GameObject{
                 }
                 this.move();
             }
-        })
+        }, this.game.tl.totalTime());
 
-        this.pathIndex++;
 
     }
 }
