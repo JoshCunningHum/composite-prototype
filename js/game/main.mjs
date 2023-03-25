@@ -58,6 +58,8 @@ class Game{
         this.i[infc.label] = infc;
 
         infc.game = this;
+        infc._iox = infc.x;
+        infc._ioy = infc.y;
 
         if(!menu) return;
         menu.addChild(infc);
@@ -160,12 +162,12 @@ class Game{
         if(t._igroup) this.interfaces.filter(f => f._igroup == t._igroup).forEach(i => i.hide());
     
         // sliding animation
-        t.x = -this.width;
+        t.y = this.height;
         t.show();
 
-        const ox = t._iox ? t._iox : 0;
+        const oy = t._ioy ? t._ioy : 0;
 
-        gsap.to(t, {x: ox, duration: 0.5});
+        gsap.to(t, {y: oy, duration: 0.5});
     }
 
     // also hides interface in the same group
@@ -402,7 +404,7 @@ class Game{
             s_mult.addChild(s_multTxt);
             s_toggle.addChild(s_toggleTxt);
 
-            const s_box = font_size_detail * 1.5,
+            const s_box = font_size_detail * 1.75,
             s_btnDim = [
                 ...Array(2).fill(-s_box / 2),
                 ...Array(2).fill(s_box)
