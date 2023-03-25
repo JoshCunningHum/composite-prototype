@@ -92,7 +92,7 @@ class Geometry{
         // TODO: Change tower colors later
 
         const cs = {
-            c_build: 0x999999,
+            c_build: 0x666666,
             c_a: 0xffa54c,
             c_b: 0xffa54c,
             c_c: 0xffa54c,

@@ -74,6 +74,12 @@ class Tower extends GameObject{
         return this.base_cost * (1 + Tower.uf)**(this.lvl + 1);
     }
 
+    
+    get money_spent(){
+        return this.lvl == 0 ? this.base_cost : 
+               this.base_cost * ((1 + Tower.uf)**(this.lvl + 1) - 1) / Tower.uf;
+    }
+
     // miscellaneous
     _range_finder = null;
     
@@ -164,6 +170,15 @@ class Tower extends GameObject{
         this.game.updateModEquipped(this);
     }
 
+    updateTowerManager(){
+        const tower_manage = this.game.get_i("iman_towerCont"),
+              upg_btn = tower_manage.getChildAt(0).getChildAt(0),
+              sell_btn = tower_manage.getChildAt(2).getChildAt(0);
+
+        upg_btn.text = `↑ ${this.upgrade_cost.toFixed(0)}🟡`;
+        sell_btn.text = `🗑️ ${(this.money_spent / 2).toFixed(0)}🟡`;
+    }
+
     _mod = null;
 
     get mod_length(){
@@ -193,9 +208,7 @@ class Tower extends GameObject{
 
     sell(){
         this.parent.removeChild(this);
-        const value = this.lvl == 0 ? 
-                      this.base_cost : 
-                      this.base_cost * ((1 + Tower.uf)**(this.lvl + 1) - 1) / Tower.uf;
+        const value = this.money_spent;
         console.log("SOLD A TOWER: LVL " + this.lvl + " FOR " + value / 2);
         return value / 2;
     }
@@ -215,11 +228,11 @@ class Quadra extends Tower{
             rng: 1, // block size
             trg: 1,
             pen: 0, // armor peircing
-            type: "a"
+            type: "a",
+            base_cost: Quadra.cost
         })
 
         this.block = block;
-        this.base_cost = Quadra.cost;
         [this.mx, this.my] = block.mapPos;
     }
 
@@ -236,14 +249,15 @@ class Quadra extends Tower{
 
         this.eventMode = "static";
         this.onpointertap = function(ev){
+            if(this.game.__showing_mod_menu) return;
             ev.stopPropagation();
 
-            if(!this.game.__showing_mod_menu) this.game.deselectAll();
-            else return;
+            this.game.deselectAll();
 
             this.selected = true;
 
             this.game.show_i("iman_towerCont");
+            this.updateTowerManager();
         }
     }
 
@@ -273,11 +287,11 @@ class Apeira extends Tower{
             rng: 0.8, // block size
             trg: Infinity,
             pen: 0, // armor peircing
-            type: "b"
+            type: "b",
+            base_cost: Apeira.cost
         })
 
         this.block = block;
-        this.base_cost = Quadra.cost;
         [this.mx, this.my] = block.mapPos;
 
     }
@@ -297,6 +311,8 @@ class Apeira extends Tower{
 
         this.eventMode = "static";
         this.onpointertap = function(ev){
+
+            if(this.game.__showing_mod_menu) return;
             ev.stopPropagation();
 
             this.game.deselectAll();
@@ -304,6 +320,8 @@ class Apeira extends Tower{
             this.selected = true;
 
             this.game.show_i("iman_towerCont");
+            this.updateTowerManager();
+
         }
     }
 

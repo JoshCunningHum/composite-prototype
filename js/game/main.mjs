@@ -35,7 +35,7 @@ class Game{
 
         // change interface text
         const _int = this.get_i("ibase_healthCont");
-        _int.children[0].text = val;
+        _int.children[0].text = `❤️ ${val}`;
     }
     
     map = null;
@@ -387,25 +387,10 @@ class Game{
             e_moneyCont.addChild(e_moneyTxt, e_moneyIco);
             this._addInterface(e_moneyCont, this.menu_game);
 
-            // TODO: Base
             const b_healthCont = new GameObject("ibase_healthCont"),
-                  b_healthTxt = new TextObject("HEALTH", detail_font_style),
-                  b_healthIco = new GameObject("ibase_healthIcon");
+                  b_healthTxt = new TextObject("HEALTH", detail_font_style);
 
-            b_healthTxt.position.x = font_size_detail + 5;
-
-            // TODO: PIXI Exlusive Geometry Used
-            b_healthIco.beginFill(0xff3030)
-            .drawRegularPolygon(0, 7, font_size_detail / 1.5, 4, Math.PI)
-            .endFill();
-
-            b_healthIco.beginFill(0x1C1C1C)
-            .drawRegularPolygon(0, -1, 7, 4, Math.PI)
-            .endFill();
-
-            b_healthIco.position.set(6, 4);
-
-            b_healthCont.addChild(b_healthTxt, b_healthIco);
+            b_healthCont.addChild(b_healthTxt);
             b_healthCont.position.x = this.centerX(-50)[0];
 
             this._addInterface(b_healthCont, this.menu_game);
@@ -415,7 +400,12 @@ class Game{
                   b_towerA = new GameObject("ibuild_towerA"),
                   b_towerB = new GameObject("ibuild_towerB"),
                   b_towerC = new GameObject("ibuild_towerC"),
-                  b_towerD = new GameObject("ibuild_towerD");
+                  b_towerD = new GameObject("ibuild_towerD"),
+
+                  b_towerAC = new TextObject(Quadra.cost, detail_font_style),
+                  b_towerBC = new TextObject(Apeira.cost, detail_font_style),
+                  b_towerCC = new TextObject(Penta.cost, detail_font_style),
+                  b_towerDC = new TextObject(Hexa.cost, detail_font_style);
 
             const b_btndim = [ this.width / 4, this.map.blockHeight + 15],
                   b_btnHalf = b_btndim.map(e => e /= 2),
@@ -432,10 +422,20 @@ class Game{
             b_towerD.beginFill(b_cbtn).drawRect(...b_btnHalfN, ...b_btndim);
 
             // set button icons
-            Geometry.TOWER.REG.bind(b_towerA)(this.map.blockWidth / 2, 4, "build");
-            Geometry.TOWER.CIRCLE.bind(b_towerB)(this.map.blockWidth / 2, "build");
-            Geometry.TOWER.REG.bind(b_towerC)(this.map.blockWidth / 2, 5, "build");
-            Geometry.TOWER.REG.bind(b_towerD)(this.map.blockWidth / 2, 6, "build");
+            Geometry.TOWER.REG.bind(b_towerA)(this.map.blockWidth / 1.75, 4, "build");
+            Geometry.TOWER.CIRCLE.bind(b_towerB)(this.map.blockWidth / 1.75, "build");
+            Geometry.TOWER.REG.bind(b_towerC)(this.map.blockWidth / 1.75, 5, "build");
+            Geometry.TOWER.REG.bind(b_towerD)(this.map.blockWidth / 1.75, 6, "build");
+
+            b_towerAC.anchor.set(0.5, 0.5);
+            b_towerBC.anchor.set(0.5, 0.5);
+            b_towerCC.anchor.set(0.5, 0.5);
+            b_towerDC.anchor.set(0.5, 0.5);
+
+            b_towerA.addChild(b_towerAC);
+            b_towerB.addChild(b_towerBC);
+            b_towerC.addChild(b_towerCC);
+            b_towerD.addChild(b_towerDC);
 
             // set button positions
             b_towerA.position.set(...b_btnHalf)
@@ -486,9 +486,9 @@ class Game{
             m_towerUpg.beginFill(m_cUpg).drawRect(...m_btnHalfN, ...m_btndim).endFill();
 
             // set button texts
-            const m_towerModTxt = new TextObject("MOD", m_txtStyle),
+            const m_towerModTxt = new TextObject("🛠️ MOD", m_txtStyle),
                   m_towerSellTxt = new TextObject("SELL", m_txtStyle),
-                  m_towerUpgTxt = new TextObject("UPGRADE", m_txtStyle);
+                  m_towerUpgTxt = new TextObject("↑", m_txtStyle);
 
             m_towerModTxt.anchor.set(0.5, 0.5);
             m_towerSellTxt.anchor.set(0.5, 0.5);
@@ -560,7 +560,7 @@ class Game{
             mod_menu._igroup = "tower_management";
 
             // TODO: PIXI EXCLUSIVE DRAW
-            mod_menu.beginFill(0x333333, 0.75)
+            mod_menu.beginFill(0x333333, 0.9)
             .drawRect(
                 menu_padding, menu_padding,
                 this.width - menu_padding * 2, this.height - menu_padding * 2
@@ -991,7 +991,6 @@ class Game{
 
             return;
         }
-
         const t = new Tower({block: selected});
 
         t.game = this;
