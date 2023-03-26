@@ -18,6 +18,11 @@ class Game{
         health: 20
     }
 
+    // graphic defaults
+    static g = {
+        max_mod_per_page: 8
+    }
+
     static {
         const {mapCols, mapRows} = this.defaults;
 
@@ -88,6 +93,10 @@ class Game{
 
     get menu_game(){
         return this.menus.find(e => e.label == "menu_Game");
+    }
+
+    get selected_tower(){
+        return this.towers.find(t => t.selected);
     }
 
     // GSAP Timeline
@@ -621,7 +630,7 @@ class Game{
         // MOD Interface (it's so big, that's what she said)
         {
             const menu_padding = 20,
-                  top_section = 230,
+                  top_section = 200,
                   st_style = {
                     fontFamily: "ISO",
                     fontSize: 15,
@@ -635,8 +644,21 @@ class Game{
                   exit = new TextObject("❌", {}),
                   type = new GameObject("imod_typeCont"),
                   statCont = new GameObject("imod_statCont"),
+
+                  mod_cont = new GameObject("imod_modCont"),
+
                   equipped = new GameObject("imod_equipped"),
                   avail = new GameObject("imod_avail"),
+
+                  av_prev = new GameObject("imod_avPrev"),
+                  av_next = new GameObject("imod_avNext"),
+                  av_prevTxt = new TextObject("▲", st_style),
+                  av_nextTxt = new TextObject("▼", st_style),
+
+                  eq_prev = new GameObject("imod_eqPrev"),
+                  eq_next = new GameObject("imod_eqNext"),
+                  eq_prevTxt = new TextObject("▲", st_style),
+                  eq_nextTxt = new TextObject("▼", st_style),
 
                   st_atk = new TextObject("ATK ", st_style),
                   st_spd = new TextObject("SPD ", st_style),
@@ -684,27 +706,111 @@ class Game{
             st_trg.position.y = 10 + st_lineHeight * 4;
             st_pen.position.y = 10 + st_lineHeight * 5;
 
-            equipped.position.y = top_section + menu_padding;
-            equipped.position.x = menu_padding * 2;
+            // create mod layout
+            const mod_cont_dim = [
+                this.width / 2 - menu_padding * 2, 
+                mod_menu.height - (top_section + menu_padding * 3.5)
+            ], mod_nav_dim = [mod_cont_dim[0], 50],
+               mod_list_dim = [mod_cont_dim[0], mod_cont_dim[1] - mod_nav_dim[1] ]
 
-            avail.position.y = top_section + menu_padding;
-            avail.position.x = menu_padding * 2 + this.width / 2 - menu_padding * 2;
+            console.log(mod_cont_dim);
+
+            mod_cont.beginFill(0x333333)
+            .drawRect(0, 0, mod_cont_dim[0] + mod_nav_dim[0], mod_cont_dim[1] + mod_nav_dim[1])
+            .endFill();
+
+            mod_cont.position.y = top_section + menu_padding;
+            mod_cont.position.x = menu_padding * 2;
+
+            equipped.position.y = mod_nav_dim[1];
+
+            avail.position.y = mod_nav_dim[1];
+            avail.position.x = mod_cont.width / 2;
 
             st_cap.anchor.set(0.5, 0.5);
-            st_cap.position.x = (this.width / 2 - menu_padding * 4) / 2;
+            st_cap.position.x = this.width / 4 - menu_padding;
             st_cap.position.y = -menu_padding / 1.5;
             
 
-            // create mod layout
-            equipped.beginFill(0x555555, 0.9)
-            .drawRect(
-                0, 0, this.width / 2 - menu_padding * 2, this.height / 8 * 5 - menu_padding
-            ).endFill();
+            av_prev.beginFill(0x222222).drawRect(0, 0, ...mod_nav_dim).endFill();
+            av_prev.beginFill(0x383838).drawRect(3, 3, ...mod_nav_dim.map(e => e -= 6));
 
-            avail.beginFill(0x444444, 0.9)
-            .drawRect(
-                0, 0, this.width / 2 - menu_padding * 2, this.height / 8 * 5 - menu_padding
-            ).endFill();
+            av_next.beginFill(0x222222).drawRect(0, 0, ...mod_nav_dim).endFill();
+            av_next.beginFill(0x383838).drawRect(3, 3, ...mod_nav_dim.map(e => e -= 6));
+
+            eq_prev.beginFill(0x222222).drawRect(0, 0, ...mod_nav_dim).endFill();
+            eq_prev.beginFill(0x383838).drawRect(3, 3, mod_nav_dim[0] - 3, mod_nav_dim[1] - 6);
+
+            eq_next.beginFill(0x222222).drawRect(0, 0, ...mod_nav_dim).endFill();
+            eq_next.beginFill(0x383838).drawRect(3, 3, mod_nav_dim[0] - 3, mod_nav_dim[1] - 6);
+
+            equipped.beginFill(0x555555, 0.9).drawRect(0, 0, ...mod_list_dim).endFill();
+            avail.beginFill(0x444444, 0.9).drawRect(0, 0, ...mod_list_dim).endFill();
+
+            // mod navigation
+            eq_next.y += mod_cont.height - mod_nav_dim[1];
+            av_prev.x += mod_cont.width / 2;
+            av_next.position.set(av_prev.x, eq_next.y);
+            
+
+            av_prev.addChild(av_prevTxt);
+            av_next.addChild(av_nextTxt);
+            eq_prev.addChild(eq_prevTxt);
+            eq_next.addChild(eq_nextTxt);
+            
+            av_prevTxt.anchor.set(0.5, 0.5);
+            av_nextTxt.anchor.set(0.5, 0.5);
+            eq_prevTxt.anchor.set(0.5, 0.5);
+            eq_nextTxt.anchor.set(0.5, 0.5);
+
+            av_prevTxt.position.set(...av_prev.center);
+            av_nextTxt.position.set(...av_next.center);
+            eq_prevTxt.position.set(...eq_prev.center);
+            eq_nextTxt.position.set(...eq_next.center);
+
+            // mod nav events
+            av_prev.eventMode = "static";
+            av_next.eventMode = "static";
+            eq_prev.eventMode = "static";
+            eq_next.eventMode = "static";
+
+            av_prev.tint = 0x888888;
+            av_next.tint = 0x888888;
+            eq_prev.tint = 0x888888;
+            eq_next.tint = 0x888888;
+
+            av_prev.onpointertap = () => {
+                const m = this.__mod_menu;
+                m.mod_avail_page--;
+                if(m.mod_avail_page < 0) m.mod_avail_page = 0;
+                this.updateModAvailable();
+            }
+            av_next.onpointertap = () => {
+                const m = this.__mod_menu;
+                m.mod_avail_page++;
+                if(m.mod_avail_page * Game.g.max_mod_per_page > this.mods.length - 1) m.mod_avail_page--;
+                this.updateModAvailable();
+            }
+
+            eq_prev.onpointertap = () => {
+                const m = this.__mod_menu;
+                m.mod_equip_page--;
+
+                const st = this.selected_tower;
+
+                if(m.mod_equip_page < 0) m.mod_equip_page = 0;
+                this.updateModEquipped(st);
+            }
+            eq_next.onpointertap = () => {
+                const m = this.__mod_menu;
+                m.mod_equip_page++;
+
+                const st = this.selected_tower;
+                console.log(m.mod_equip_page * Game.g.max_mod_per_page, st.mod_length);
+
+                if(m.mod_equip_page * Game.g.max_mod_per_page > st.mod_length - 1) m.mod_equip_page--;
+                this.updateModEquipped(st);
+            }
 
             // Element Events
             exit.eventMode = "static";
@@ -715,7 +821,7 @@ class Game{
             }
 
             // save references
-            this.__mod_menu = {
+            const save_pref = {
                 type: type,
                 stats: {
                     atk: st_atk,
@@ -728,14 +834,27 @@ class Game{
                 },
                 mod_equip: equipped,
                 mod_avail: avail,
+
+                // pagination feature
+                mod_equip_page: 0,
+                mod_avail_page: 0,
+                btn: {
+                    av_prev: av_prev,
+                    av_next: av_next,
+                    eq_prev: eq_prev,
+                    eq_next: eq_next
+                },
+
                 style: {
                     md_cont_h: menu_padding
                 }
             }
 
-            equipped.addChild(st_cap);
+            Object.assign(this.__mod_menu, save_pref);
+
+            mod_cont.addChild(st_cap, av_prev, av_next, eq_prev, eq_next, equipped, avail);
             statCont.addChild(st_lvl, st_atk, st_spd, st_rng, st_trg, st_pen);
-            mod_menu.addChild(exit, type, statCont, equipped, avail);
+            mod_menu.addChild(exit, type, statCont, mod_cont);
 
             mod_menu.hide();
             this._addInterface(mod_menu, this.menu_game);
@@ -755,12 +874,22 @@ class Game{
         },
         mod_equip: null,
         mod_avail: null,
+        btn: {
+            av_prev: null,
+            av_next: null,
+            eq_prev: null,
+            eq_next: null
+        },
+
+        // pagination feature
+        mod_equip_page: 0,
+        mod_avail_page: 0
     }
 
     // base on selected tower
     setModMenuElements(){
         // get selected tower
-        const t = this.towers.find(t => t.selected);
+        const t = this.selected_tower;
 
         this.updateModElementStat(t);
         const type = this.__mod_menu.type;
@@ -796,17 +925,25 @@ class Game{
     }
 
     updateModEquipped(t){
-        const {mod_equip: eq, style: s}  = this.__mod_menu;
+        const {mod_equip: eq, style: s, mod_equip_page: count, btn}  = this.__mod_menu,
+        max = Game.g.max_mod_per_page, length = t.mod_length;
 
-        const cap_go = this.__mod_menu.stats.cap;
         eq.removeChildren();
-        eq.addChild(cap_go);
 
         const ms = t.modAsArray;
 
+        if(length < max * count){
+            count = 0;
+            this.__mod_menu.mod_equip_page = count;
+        }
+
         ms.forEach((e, i) => {
+            if(!Util.isInBound(count * max, (count + 1) * max, i)) return;
             const m = new GameObject("mequipped_cont"),
-                  m_h = 50, m_b = 3;
+                  m_h = eq.height / Game.g.max_mod_per_page, 
+                  m_b = 3;
+
+                  i %= max;
 
             // TODO: PIXI EXLUSIVE DRAW
             m.beginFill(0x0c9623)
@@ -843,25 +980,46 @@ class Game{
 
             eq.addChild(m);
         })
+
+        // change stylings for mod equip navigation buttons
+        if(count <= 0) btn.eq_prev.tint = 0x888888;
+        else btn.eq_prev.tint = 0xffffff;
+
+        if((count + 1) * max > length - 1) btn.eq_next.tint = 0x888888;
+        else btn.eq_next.tint = 0xffffff;
     }
 
     // available
     updateModAvailable(){
-        const {mod_avail: av, style: s} = this.__mod_menu;
+        
+        if(this.mods.length - 1 < this.__mod_menu.mod_avail_page * Game.g.max_mod_per_page){
+            this.__mod_menu.mod_avail_page--;
+            if(this.__mod_menu.mod_avail_page <= 0) this.__mod_menu.mod_avail_page = 0;
+        }
+
+        const {mod_avail: av, style: s, mod_avail_page: count, btn} = this.__mod_menu,
+              max = Game.g.max_mod_per_page, length = this.mods.length;
 
         av.removeChildren();
 
+
         this.mods.forEach((e, i) => {
+            if(!Util.isInBound(count * max, (count + 1) * max, i)) return;
+
             const m = new GameObject("mavail_cont"),
-                  m_h = 50, m_b = 2;
+                  m_h = av.height / max, 
+                  m_b = 3;
+
+            i %= max;
+
 
             // TODO: PIXI EXLUSIVE DRAW
-            m.beginFill(0x111111)
+            m.beginFill(0x333333)
             .drawRect(0, 0, this.width / 2 - s.md_cont_h * 2, m_h)
             .endFill();
 
             m.beginFill(0x525252)
-            .drawRect(2, i == 0 ? 2 : 0, this.width / 2 - s.md_cont_h * 2 - m_b * 1.5, m_h - m_b - (i == 0 ? 2 : 0))
+            .drawRect(m_b, m_b,  this.width / 2 - s.md_cont_h * 2 - m_b * 2, m_h - m_b*2)
             .endFill();
 
             // TEXT
@@ -884,8 +1042,12 @@ class Game{
             // add event to add mods to the tower
             m.eventMode = "static";
             m.onpointertap = () => {
+
                 // add mod to the tower, unless if it has full mod capacity
-                const st = this.towers.find(tower => tower.selected);
+                const st = this.selected_tower;
+
+                console.log(st.cap, st.mod_length);
+
                 if(st.cap <= st.mod_length) return;
 
                 const i = this.mods.findIndex(md => md.id == e.id),
@@ -896,6 +1058,13 @@ class Game{
 
             av.addChild(m);
         })
+
+        // change stylings for mod equip navigation buttons
+        if(count <= 0) btn.av_prev.tint = 0x888888;
+        else btn.av_prev.tint = 0xffffff;
+
+        if((count + 1) * max > length - 1) btn.av_next.tint = 0x888888;
+        else btn.av_next.tint = 0xffffff;
     }
 
     // Waves
@@ -956,6 +1125,8 @@ class Game{
                 testMod.clone.set("prop", "spd").set("mode", "*").set("value", .25),
                 testMod.clone.set("prop", "trg").set("value", 1),
                 testMod.clone.set("prop", "trg").set("value", 1),
+                testMod.clone.set("prop", "rng").set("value", 0.5),
+                testMod.clone.set("mode", "*").set("value", 0.2),
             )
 
             this.showMenu("menu_mapPreload");
@@ -1131,7 +1302,7 @@ class Game{
     }
 
     upgradeTower(){
-        const t = this.towers.find(t => t.selected);
+        const t = this.selected_tower;
         this.hide_i("iman_towerCont");
         if(t == null) return;
         this.deselectAll();
@@ -1142,7 +1313,7 @@ class Game{
     }
 
     sellTower(){
-        const t = this.towers.find(t => t.selected);
+        const t = this.selected_tower;
         if(t == null) return;
 
         // remove all mods from the tower and turn it back in the mods array

@@ -1,5 +1,6 @@
 import { GameObject, Geometry, TextObject } from "../adapter.mjs";
 import { Quad } from "../engine/PIXI/pixi.mjs";
+import { Game } from "./main.mjs";
 import { Bullet, Field } from "./projectile.mjs";
 
 
@@ -190,6 +191,9 @@ class Tower extends GameObject{
         if(this._mod == null) this._mod = mod;
         else this._mod.addMod(mod);
 
+        if((this.game.__mod_menu.mod_equip_page + 1) * Game.g.max_mod_per_page < this.mod_length) {
+            this.game.__mod_menu.mod_equip_page++;
+        }
         this.refreshStats();
     }
 
@@ -197,7 +201,12 @@ class Tower extends GameObject{
         if(this._mod.equals(mod)) this._mod = this._mod.mod;
         else this._mod.remove(mod); // recursively find that mod
 
+        if(this.game.__mod_menu.mod_equip_page * Game.g.max_mod_per_page >= this.mod_length) {
+            this.game.__mod_menu.mod_equip_page--;
+        }
+
         this.refreshStats();
+
 
         return mod; // returns the deleted mod
     }
