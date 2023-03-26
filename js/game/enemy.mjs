@@ -2,6 +2,7 @@ import { GameObject, Geometry } from "../adapter.mjs";
 import {
     gsap
 } from "../engine/GSAP/index.mjs";
+import { Mod } from "./mod.mjs";
 
 class Enemy extends GameObject{
     static types = {};
@@ -77,6 +78,12 @@ class Enemy extends GameObject{
         return this;
     }
 
+    get modDropChance(){
+        const k = 0.15, p = 0.5, c = 0.1;
+
+        return Math.max(0, 1 - (Math.min(1, k * (this.wave_cycle/20)**(-p) + c - this.m_reward/1000) + 0.2));
+    }
+
     get spawnLeft(){
         return this.sl;
     }
@@ -114,6 +121,64 @@ class Enemy extends GameObject{
             this.die();
             // when dying from hp loss, give reward
             game.addMoney(this.m_reward);
+            // then calculate for mod drop chance
+            const rolled_value = Math.random();
+
+            if(rolled_value < this.modDropChance){
+                const props = ["atk", "rng", "spd", "trg", "pen"],
+                      modes = ["*", "+"];
+
+                let type_roll = props[Math.floor(Math.random() * props.length * 2) % props.length],
+                    mode_roll = Math.random() < 0.75 ? 1 : 0;
+
+                console.log(`CREATED: ${type_roll}`);
+
+                // determine mode by type
+                switch(type_roll){
+                    case "rng":
+                    case "pen":
+                        mode_roll = (mode_roll * -1) + 1;
+                        break;
+                    case "trg":
+                        mode_roll = 1;
+                }
+
+                mode_roll = modes[mode_roll];
+                
+                let value_roll = Math.random();
+
+                // determine value base on type
+                if(mode_roll == "+"){
+                    // increment
+                    switch(type_roll){
+                        case "atk":
+                        case "spd":
+                            value_roll = this.wave_cycle * 10 + (this.wave_cycle * (value_roll - 0.5));
+                            break;
+                        case "rng":
+                        case "pen":
+                            value_roll = this.wave_cycle + (this.wave_cycle * 0.25 * (value_roll - 0.5));
+                            break;
+                        case "trg":
+                            value_roll = Math.min(5, Math.ceil((this.wave_cycle ** 2 / 10) * (1 + (value_roll - 0.5))));
+                            break;
+                    }
+                }else{
+                    // multiplicative
+                    switch(type_roll){
+                        case "atk":
+                        case "spd":
+                            value_roll = this.wave_cycle * .25 * (value_roll - 0.05);
+                            break;
+                        case "rng":
+                        case "pen":
+                            value_roll = 1.95 / ( 1 + Math.E ** (-1.7 * (this.wave_cycle - 16.8) / 20)) * 2.5
+                            break;
+                    }
+                }
+
+                this.game.addMod(new Mod({prop: type_roll, mode: mode_roll, value: value_roll}));
+            }
         }
     }
 
@@ -153,7 +218,9 @@ class Enemy extends GameObject{
         dmg *= 1 - this.dmgReduction;
         this.health -= dmg;
 
-        if(this.health <= 0) this.die();
+        if(this.health <= 0){
+            this.die();
+        }
     }
 
     multStat(wave_cycle){
@@ -179,7 +246,8 @@ class Enemy extends GameObject{
             dmg: this.dmg,
             armor: this.armor,
             speed: this.speed,
-            m_reward: this.m_reward
+            m_reward: this.m_reward,
+            wave_cycle: wave_cycle
         };
 
         Object.assign(this.prop, b_prop);

@@ -161,6 +161,19 @@ class Game {
             id: "game_timeline",
             smoothChildTiming: true
         })
+
+        this.md_tl = gsap.timeline({
+            sortChildren: false,
+            defaults: {
+                duration: .5,
+                overwrite: false,
+                delay: 0
+
+            },
+            autoRemoveChildren: true,
+            id: "game_timeline",
+            smoothChildTiming: true
+        })
     }
 
     get center() {
@@ -472,6 +485,7 @@ class Game {
             this.paused = false;
 
             s_mult.onpointertap = () => {
+                if(this.__showing_mod_menu) return;
                 switch (this.speed_mult) {
                     case 1:
                         s_multTxt.text = "x2";
@@ -489,6 +503,7 @@ class Game {
             }
 
             s_toggle.onpointertap = () => {
+                if(this.__showing_mod_menu) return;
                 if (this.paused) {
                     s_toggleTxt.text = "▐ ▌";
                     s_toggleTxt.scale.set(0.7, 0.7);
@@ -647,7 +662,6 @@ class Game {
             m_towerSell.eventMode = "static";
             m_towerUpg.eventMode = "static";
             m_towerSell.onpointertap = () => this.sellTower();
-            // TODO: MOD MENU HERE
             m_towerMod.onpointertap = () => {
                 this.setModMenuElements();
                 this.show_i("imod_menu");
@@ -659,6 +673,20 @@ class Game {
 
             m_towerCont.hide();
             this._addInterface(m_towerCont, this.menu_game);
+
+            // mod drop notification
+
+            const m_dropNotif = new GameObject("imod_notif"),
+                  m_dropNotifTxt = new TextObject("MOD MOD DROP🛠️", m_txtStyle);
+            m_dropNotif.y = m_towerCont.y + m_towerCont.height;
+            m_dropNotif.x = this.width;
+            m_dropNotifTxt.anchor.set(1, 0);
+            m_dropNotif.hide();
+
+            m_dropNotif.addChild(m_dropNotifTxt);
+            this.mod_notif = m_dropNotif;
+
+            this.menu_game.addChild(m_dropNotif);
         }
 
         // MOD Interface (it's so big, that's what she said)
@@ -986,6 +1014,8 @@ class Game {
             stats: stat
         } = this.__mod_menu;
 
+        const allMods = this.towers.reduce((a, t) => a += t.mod_length, 0) + this.mods.length;
+
         stat.atk.text = `ATK - ${t.atk.toFixed(2)}`;
         stat.spd.text = `SPD - ${t.spd.toFixed(2)}`;
         stat.rng.text = `RNG - ${t.rng.toFixed(2)}`;
@@ -993,7 +1023,7 @@ class Game {
         stat.pen.text = `PEN - ${t.pen.toFixed(2)}`;
         stat.lvl.text = `LVL ${t.lvl}`;
         stat.cap.text = `CAP ${t.mod_length}/${t.cap}`;
-        stat.mod.text = `MOD ${this.mods.length}/${t.cap}`;
+        stat.mod.text = `MOD ${this.mods.length}/${allMods}`;
     }
 
     updateModEquipped(t) {
@@ -1126,8 +1156,10 @@ class Game {
                 if (m.target_release) {
                     const st = this.selected_tower;
                     
-                    st.addModAt(e.clone, m.target_index, false);
-                    st.delMod(e);
+                    if(st.cap > st.mod_length){
+                        st.addModAt(e.clone, m.target_index, false);
+                        st.delMod(e);
+                    }
                 } else {
                     // go back to original x and y 
                     m.x = m._of.x;
@@ -1301,10 +1333,12 @@ class Game {
                 if (m.target_release) {
                     const st = this.selected_tower;
 
-                    const i = this.mods.findIndex(md => md.id == e.id),
-                        tmod = this.mods.splice(i, 1)[0];
-
-                    st.addModAt(tmod, m.target_index);
+                    if(st.cap > st.mod_length){
+                        const i = this.mods.findIndex(md => md.id == e.id),
+                            tmod = this.mods.splice(i, 1)[0];
+    
+                        st.addModAt(tmod, m.target_index);
+                    }
                 } else {
                     // go back to original x and y 
                     m.x = m._of.x;
@@ -1316,6 +1350,7 @@ class Game {
                 m.wasDragging = true;
                 m.dragging = false;
                 di.hide();
+                this.updateModAvailable();
             }
 
             m.onpointerup = _finishDragging;
@@ -1399,12 +1434,6 @@ class Game {
                 testMod.clone.set("prop", "spd").set("mode", "*").set("value", .25),
                 testMod.clone.set("prop", "trg").set("value", 1),
                 testMod.clone.set("prop", "trg").set("value", 1),
-                testMod.clone.set("prop", "rng").set("value", 0.5),
-                testMod.clone.set("mode", "*").set("value", 0.2),
-                testMod.clone.set("prop", "trg").set("value", 1),
-                testMod.clone.set("prop", "trg").set("value", 1),
-                testMod.clone.set("prop", "rng").set("value", 0.5),
-                testMod.clone.set("mode", "*").set("value", 0.2),
             )
 
             this.showMenu("menu_mapPreload");
@@ -1619,6 +1648,21 @@ class Game {
         return this.entities.filter(e => {
             return Util.isInBound(minX, maxX, e.x) && Util.isInBound(minY, maxY, e.y);
         })
+    }
+
+    mod_notifs = 0;
+
+    addMod(mod){
+        // do mod notification here
+        this.mod_notif.show();
+        this.mod_notif.getChildAt(0).text = `${mod.label} DROP🛠️`;
+        this.mods.push(mod);
+        this.mod_notifs++;
+
+        setTimeout(() => {
+            this.mod_notifs--;
+            if(this.mod_notifs == 0) this.mod_notif.hide();
+        }, 1000);
     }
 
     addMoney(val) {

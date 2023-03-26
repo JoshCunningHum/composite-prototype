@@ -25,12 +25,14 @@ class Mod{
         return this;
     }
 
-    constructor({prop, mode, value, label = null, name = ""}){
+    constructor({prop, mode, value, label = null, name = "", wave_cycle}){
         this.prop = prop;
         this.mode = mode;
         this.value = value;
         this.clabel = label;
         this.name = name;
+
+        this.wave_cycle = wave_cycle || 0;
 
         this.id = Math.random().toString(36).substring(2,10);
     }
