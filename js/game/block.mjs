@@ -168,6 +168,8 @@ class Block extends GameObject {
             if(!this.game.__showing_mod_menu) this.game.deselectAll();
             else this.parent.deselectAll();
 
+            this.game.hide_i("ibuild_towerCont");
+
             // Only works on site type blocks
             if(this.label != "Site") return;
             if(this.game.hasTowerAtBlock(...this.mapPos)) return;

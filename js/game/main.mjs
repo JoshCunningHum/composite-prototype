@@ -366,7 +366,9 @@ class Game{
 
             w_ctSkip.eventMode = "static";
             w_ctSkip.onpointertap = () => {
-                if(this.wave) this.addMoney(this.wave.skip());
+                if(!this.wave) return;
+                this.addMoney(this.wave.skip());
+                this.wave_countdown = this.wave.reduce(0);
             }
 
             this.__wave_count_object = w_waveCount;
@@ -460,7 +462,7 @@ class Game{
             s_cont.addChild(s_toggle, s_mult);
 
             s_cont.position.x = this.width - s_box * 2 + 5;
-            s_cont.position.y = this.map.position.y + s_box;
+            s_cont.position.y = (this.height - map_dimensions[1]) / 2 - s_box;
 
             this._addInterface(s_cont, this.menu_game);
 
@@ -787,7 +789,7 @@ class Game{
         stat.atk.text = `ATK - ${t.atk.toFixed(2)}`;
         stat.spd.text = `SPD - ${t.spd.toFixed(2)}`;
         stat.rng.text = `RNG - ${t.rng.toFixed(2)}`;
-        stat.trg.text = `TRG - ${t.trg.toFixed(2)}`;
+        stat.trg.text = `TRG - ${t.trg.toFixed(0)}`;
         stat.pen.text = `PEN - ${t.pen.toFixed(2)}`;
         stat.lvl.text = `LVL ${t.lvl}`;
         stat.cap.text = `CAP ${t.mod_length}/${t.cap}`;
@@ -927,7 +929,7 @@ class Game{
               i_wave = this.get_i("iwave_ctCont");
         i_wave.getChildAt(0).scale.x = val / owct;
 
-        i_wave.getChildAt(1).text = `SKIP (${Math.floor(this.wave.currentSkipValue)})`;
+        i_wave.getChildAt(1).text = `SKIP ${Math.floor(this.wave.currentSkipValue)}🟡`;
 
         if(val <= 0) i_wave.hide();
         else i_wave.show();

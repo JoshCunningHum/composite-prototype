@@ -6,7 +6,7 @@ import { Bullet, Field } from "./projectile.mjs";
 class Tower extends GameObject{
 
     static uf = 0.5; // upgrade factor
-    static base_cap = 3;
+    static base_cap = 0;
     
     /*
         Tower Damage Sequence:
