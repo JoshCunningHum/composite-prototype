@@ -66,6 +66,15 @@ class Mod{
         else this.mod.addMod(mod);
     }
 
+    addModAt(targetIndex, mod, currentIndex = 0){
+        if(this.mod == null) this.mod = mod;
+        else if(currentIndex == targetIndex - 1){
+            const prevMod = this.mod;
+            this.mod = mod;
+            mod.mod = prevMod;
+        }else this.mod.addModAt(targetIndex, mod, currentIndex + 1);
+    }
+
     remove(mod){
         if(this.mod.equals(mod)){
             this.mod = this.mod.mod; // hahahah 

@@ -1,15 +1,40 @@
-import { Map, Block} from "./map.mjs";
-import { Apeira, Hexa, Penta, Quadra } from "./tower.mjs";
-import { Engine, GameObject, Geometry, TextObject } from '../adapter.mjs';
-import { Enemy } from "./enemy.mjs";
-import { Wave } from "./wave.mjs";
-import { gsap } from "../engine/GSAP/index.mjs";
-import { Util } from "./util.mjs";
-import { Text } from "../engine/PIXI/pixi.mjs";
-import { Mod } from "./mod.mjs";
+import {
+    Map,
+    Block
+} from "./map.mjs";
+import {
+    Apeira,
+    Hexa,
+    Penta,
+    Quadra
+} from "./tower.mjs";
+import {
+    Engine,
+    GameObject,
+    Geometry,
+    TextObject
+} from '../adapter.mjs';
+import {
+    Enemy
+} from "./enemy.mjs";
+import {
+    Wave
+} from "./wave.mjs";
+import {
+    gsap
+} from "../engine/GSAP/index.mjs";
+import {
+    Util
+} from "./util.mjs";
+import {
+    Text
+} from "../engine/PIXI/pixi.mjs";
+import {
+    Mod
+} from "./mod.mjs";
 
 // Acts as the game loop
-class Game{
+class Game {
     static defaults = {
         mapCols: 10,
         mapRows: 12,
@@ -24,25 +49,28 @@ class Game{
     }
 
     static {
-        const {mapCols, mapRows} = this.defaults;
+        const {
+            mapCols,
+            mapRows
+        } = this.defaults;
 
         this.defaults.minPath = mapCols * mapRows / 3;
     }
 
     _health;
 
-    get health(){
+    get health() {
         return this._health;
     }
 
-    set health(val){
+    set health(val) {
         this._health = val;
 
         // change interface text
         const _int = this.get_i("ibase_healthCont");
         _int.children[0].text = `❤️ ${val}`;
     }
-    
+
     map = null;
 
     m = {};
@@ -58,7 +86,7 @@ class Game{
      * 
      * @param {GameObject} infc the interface to be added
      */
-    _addInterface(infc, menu){
+    _addInterface(infc, menu) {
         this.interfaces.push(infc);
         this.i[infc.label] = infc;
 
@@ -66,7 +94,7 @@ class Game{
         infc._iox = infc.x;
         infc._ioy = infc.y;
 
-        if(!menu) return;
+        if (!menu) return;
         menu.addChild(infc);
     }
 
@@ -83,19 +111,19 @@ class Game{
     enemy_plane = null;
 
     /* Quick Getters */
-    get base_block(){
+    get base_block() {
         return this.map.findCell(cell => cell.label == "Base");
     }
 
-    get menu_main(){
+    get menu_main() {
         return this.menus.find(e => e.label == "menu_Main");
     }
 
-    get menu_game(){
+    get menu_game() {
         return this.menus.find(e => e.label == "menu_Game");
     }
 
-    get selected_tower(){
+    get selected_tower() {
         return this.towers.find(t => t.selected);
     }
 
@@ -108,7 +136,7 @@ class Game{
      * @param {Number} width Display width in pixel
      * @param {Number} height Display height in pixel
      */
-    constructor(container, width, height){
+    constructor(container, width, height) {
 
         // Initialize Engine 
         width ??= container.clientWidth;
@@ -122,36 +150,36 @@ class Game{
         });
 
         this.tl = gsap.timeline({
-            sortChildren: false, 
+            sortChildren: false,
             defaults: {
                 duration: .5,
                 overwrite: false,
                 delay: 0
 
-            }, 
-            autoRemoveChildren: true, 
-            id:"game_timeline", 
+            },
+            autoRemoveChildren: true,
+            id: "game_timeline",
             smoothChildTiming: true
         })
     }
 
-    get center(){
+    get center() {
         return [this.width / 2, this.height / 2];
     }
 
-    centerY(val){
+    centerY(val) {
         const c = this.center;
         c[1] += val;
         return c;
     }
 
-    centerX(val){
+    centerX(val) {
         const c = this.center;
         c[0] += val;
         return c;
     }
 
-    centerMod(x, y){
+    centerMod(x, y) {
         const c = this.center;
         c[0] += x;
         c[1] += y;
@@ -159,47 +187,50 @@ class Game{
     }
 
     // doesn't need hide, since menus act like scenes
-    showMenu(label){
+    showMenu(label) {
         this.menus.forEach(m => m.visible = false);
         this.menus.find(m => m.label == label).show();
     }
 
-    show_i(label){
-        if(this.__showing_mod_menu) return; // don't show anything when mod menu is open unless it is closed, char special
+    show_i(label) {
+        if (this.__showing_mod_menu) return; // don't show anything when mod menu is open unless it is closed, char special
 
         const t = this.interfaces.find(f => f.label == label);
-        if(t._igroup) this.interfaces.filter(f => f._igroup == t._igroup).forEach(i => i.hide());
-    
+        if (t._igroup) this.interfaces.filter(f => f._igroup == t._igroup).forEach(i => i.hide());
+
         // sliding animation
         t.y = this.height;
         t.show();
 
         const oy = t._ioy ? t._ioy : 0;
 
-        gsap.to(t, {y: oy, duration: 0.5});
+        gsap.to(t, {
+            y: oy,
+            duration: 0.5
+        });
     }
 
     // also hides interface in the same group
-    hide_i(label){
+    hide_i(label) {
         const t = this.interfaces.find(f => f.label == label);
-        if(t._igroup) this.interfaces.filter(f => f._igroup == t._igroup).forEach(i => i.hide());
+        if (t._igroup) this.interfaces.filter(f => f._igroup == t._igroup).forEach(i => i.hide());
     }
 
-    get_i(label){
+    get_i(label) {
         return this.interfaces.find(f => f.label == label);
     }
 
 
-    deselectAll(){
+    deselectAll() {
         this.map.deselectAll();
         this.towers.forEach(t => t.selected = false);
     }
 
     // Initialization
-    _init(){
+    _init() {
 
         console.log(gsap.globalTimeline, this.tl);
-        
+
         // Initialize local saved values (like settings etc)
 
         // Initialize Menus (Navigates the game and also additional interfaces)
@@ -208,31 +239,31 @@ class Game{
             new GameObject("menu_Game"),
             new GameObject("menu_mapPreload")
         ])
-        
+
         this.menus.forEach(m => {
             Engine.scene.addChild(m);
             this.m[m.label.split("_")[1]] = m;
 
             // draw backgrounds in each menu
             m.beginFill(0x1c1c1c)
-            .drawRect(0, 0, this.width, this.height)
-            .endFill();
+                .drawRect(0, 0, this.width, this.height)
+                .endFill();
         });
 
         // Main Menu
         {
             const btn_width = 200,
-                  btn_height = 50;
+                btn_height = 50;
 
             const btn_start_cont = new GameObject("btn_start");
             // TODO: PIXI EXLUSIVE USAGE
             btn_start_cont.beginFill(0xffffff)
-            .drawRect(0, 0, btn_width, btn_height)
-            .endFill();
+                .drawRect(0, 0, btn_width, btn_height)
+                .endFill();
 
             btn_start_cont.beginFill(0x1c1c1c)
-            .drawRect(1, 1, btn_width - 2, btn_height - 2)
-            .endHole();
+                .drawRect(1, 1, btn_width - 2, btn_height - 2)
+                .endHole();
             //
 
             const btn_start = new TextObject("START", {
@@ -245,7 +276,7 @@ class Game{
             })
 
             btn_start_cont.centerPutAt(...this.centerY(this.width / 3));
-            
+
             btn_start.anchor.x = 0.5;
             btn_start.anchor.y = 0.5;
             btn_start.position.set(...btn_start_cont.center);
@@ -337,18 +368,18 @@ class Game{
         [_fxp.width, _fxp.height] = map_dimensions;
         _fxp.position.y = _mapStartY;
         this.effects = this.effects_plane.children;
-        
+
         // Initialize Projectile Container
         [_pp.width, _pp.height] = map_dimensions;
         _pp.position.y = _mapStartY;
         this.projectiles = this.projectile_plane.children;
-        
+
         this.menu_game.addChild(this.map, _ep, _tp, _fxp, _pp);
 
         // Interfaces (mostly inside the game menu)
         {
             const font_size_btn = 25,
-                  font_size_detail = 20;
+                font_size_detail = 20;
 
             // Wave Details
             const wave_font_style = {
@@ -361,21 +392,21 @@ class Game{
             }
 
             const w_ctCont = new GameObject("iwave_ctCont"),
-                  w_ctBar = new GameObject("iwave_ctBar"),
-                  w_ctSkip = new TextObject("SKIP", wave_font_style),
-                  w_waveCount = new TextObject("", wave_font_style);
+                w_ctBar = new GameObject("iwave_ctBar"),
+                w_ctSkip = new TextObject("SKIP", wave_font_style),
+                w_waveCount = new TextObject("", wave_font_style);
 
-            
+
             // TODO: PIXI Exlusive Geometry Used
             w_ctBar.beginFill(0xee1010)
-            .drawRect(0, 0, this.width, 4)
-            .endFill();
+                .drawRect(0, 0, this.width, 4)
+                .endFill();
             w_ctSkip.position.y -= font_size_btn + 5;
             w_ctCont.position.y = (this.height - map_dimensions[1]) / 2 - 4;
 
             w_ctSkip.eventMode = "static";
             w_ctSkip.onpointertap = () => {
-                if(!this.wave) return;
+                if (!this.wave) return;
                 this.addMoney(this.wave.skip());
                 this.wave_countdown = this.wave.reduce(0);
             }
@@ -383,7 +414,7 @@ class Game{
             this.__wave_count_object = w_waveCount;
 
             w_waveCount.anchor.set(0.5, 0.5);
-            w_waveCount.position.set(...this.centerY(-this.height/2.5))
+            w_waveCount.position.set(...this.centerY(-this.height / 2.5))
 
             w_ctCont.addChild(w_ctBar, w_ctSkip);
 
@@ -397,14 +428,14 @@ class Game{
                 strokeThickness: 1,
                 fill: "white",
                 align: "center"
-              };
+            };
 
             // Speed Control
             const s_cont = new GameObject("ispeed_cont"),
-                  s_mult = new GameObject("ispeed_mult"),
-                  s_multTxt = new TextObject("x1", detail_font_style),
-                  s_toggle = new GameObject("ispeed_toggle"),
-                  s_toggleTxt = new Text("▐ ▌", detail_font_style);
+                s_mult = new GameObject("ispeed_mult"),
+                s_multTxt = new TextObject("x1", detail_font_style),
+                s_toggle = new GameObject("ispeed_toggle"),
+                s_toggleTxt = new Text("▐ ▌", detail_font_style);
 
             s_multTxt.anchor.set(0.5, 0.5);
             s_toggleTxt.anchor.set(0.5, 0.5);
@@ -416,13 +447,14 @@ class Game{
             s_toggle.addChild(s_toggleTxt);
 
             const s_box = font_size_detail * 1.75,
-            s_btnDim = [
-                ...Array(2).fill(-s_box / 2),
-                ...Array(2).fill(s_box)
-            ], s_btnHole = [
-                ...Array(2).fill(s_btnDim[0] + 1),
-                ...Array(2).fill(s_btnDim[2] - 2)
-            ];
+                s_btnDim = [
+                    ...Array(2).fill(-s_box / 2),
+                    ...Array(2).fill(s_box)
+                ],
+                s_btnHole = [
+                    ...Array(2).fill(s_btnDim[0] + 1),
+                    ...Array(2).fill(s_btnDim[2] - 2)
+                ];
 
             s_mult.position.x += s_box + 5;
 
@@ -440,7 +472,7 @@ class Game{
             this.paused = false;
 
             s_mult.onpointertap = () => {
-                switch(this.speed_mult){
+                switch (this.speed_mult) {
                     case 1:
                         s_multTxt.text = "x2";
                         this.speed_mult = 2;
@@ -457,11 +489,11 @@ class Game{
             }
 
             s_toggle.onpointertap = () => {
-                if(this.paused){
+                if (this.paused) {
                     s_toggleTxt.text = "▐ ▌";
                     s_toggleTxt.scale.set(0.7, 0.7);
                     this.paused = false;
-                }else{
+                } else {
                     s_toggleTxt.text = "►";
                     s_toggleTxt.scale.set(1, 1);
                     this.paused = true;
@@ -477,15 +509,15 @@ class Game{
 
             // Economy
             const e_moneyCont = new GameObject("ieco_mCont"),
-                  e_moneyTxt = new TextObject("0", detail_font_style),
-                  e_moneyIco = new GameObject("ieco_mIcon");
+                e_moneyTxt = new TextObject("0", detail_font_style),
+                e_moneyIco = new GameObject("ieco_mIcon");
 
             e_moneyTxt.position.x = font_size_detail + 5;
 
             // TODO: PIXI Exlusive Geometry Used
             e_moneyIco.beginFill(0xfcba03)
-            .drawEllipse(...Array(4).fill(font_size_detail / 2.5))
-            .endFill();
+                .drawEllipse(...Array(4).fill(font_size_detail / 2.5))
+                .endFill();
 
             e_moneyIco.position.set(5, 5);
 
@@ -493,7 +525,7 @@ class Game{
             this._addInterface(e_moneyCont, this.menu_game);
 
             const b_healthCont = new GameObject("ibase_healthCont"),
-                  b_healthTxt = new TextObject("HEALTH", detail_font_style);
+                b_healthTxt = new TextObject("HEALTH", detail_font_style);
 
             b_healthCont.addChild(b_healthTxt);
             b_healthCont.position.x = this.centerX(-50)[0];
@@ -502,20 +534,20 @@ class Game{
 
             // Tower Build Menu -------------------------
             const b_towerCont = new GameObject("ibuild_towerCont"),
-                  b_towerA = new GameObject("ibuild_towerA"),
-                  b_towerB = new GameObject("ibuild_towerB"),
-                  b_towerC = new GameObject("ibuild_towerC"),
-                  b_towerD = new GameObject("ibuild_towerD"),
+                b_towerA = new GameObject("ibuild_towerA"),
+                b_towerB = new GameObject("ibuild_towerB"),
+                b_towerC = new GameObject("ibuild_towerC"),
+                b_towerD = new GameObject("ibuild_towerD"),
 
-                  b_towerAC = new TextObject(Quadra.cost, detail_font_style),
-                  b_towerBC = new TextObject(Apeira.cost, detail_font_style),
-                  b_towerCC = new TextObject(Penta.cost, detail_font_style),
-                  b_towerDC = new TextObject(Hexa.cost, detail_font_style);
+                b_towerAC = new TextObject(Quadra.cost, detail_font_style),
+                b_towerBC = new TextObject(Apeira.cost, detail_font_style),
+                b_towerCC = new TextObject(Penta.cost, detail_font_style),
+                b_towerDC = new TextObject(Hexa.cost, detail_font_style);
 
-            const b_btndim = [ this.width / 4, this.map.blockHeight + 15],
-                  b_btnHalf = b_btndim.map(e => e /= 2),
-                  b_btnHalfN = b_btnHalf.map(e => -e),
-                  b_cbtn = 0x333333;
+            const b_btndim = [this.width / 4, this.map.blockHeight + 15],
+                b_btnHalf = b_btndim.map(e => e /= 2),
+                b_btnHalfN = b_btnHalf.map(e => -e),
+                b_cbtn = 0x333333;
 
             b_towerCont._igroup = "tower_management";
             b_towerCont.position.y = (this.height - map_dimensions[1]) / 2 + map_dimensions[1] + 2;
@@ -565,25 +597,27 @@ class Game{
 
             // Tower Management Menu -------------------------
             const m_towerCont = new GameObject("iman_towerCont"),
-                  m_towerMod = new GameObject("iman_towerMod"),
-                  m_towerSell = new GameObject("iman_towerSell"),
-                  m_towerUpg = new GameObject("iman_towerUpg");
+                m_towerMod = new GameObject("iman_towerMod"),
+                m_towerSell = new GameObject("iman_towerSell"),
+                m_towerUpg = new GameObject("iman_towerUpg");
 
             m_towerCont._igroup = "tower_management";
             m_towerCont.position.copyFrom(b_towerCont.position);
 
-            const m_btndim = [ this.width / 3, this.map.blockHeight + 15],
-                  m_btnHalf = m_btndim.map(e => e /= 2),
-                  m_btnHalfN = m_btnHalf.map(e => -e),
-                  m_cMod = 0x444444, m_cSell = 0x9b1111, m_cUpg = 0x10a524,
-                  m_txtStyle = {
+            const m_btndim = [this.width / 3, this.map.blockHeight + 15],
+                m_btnHalf = m_btndim.map(e => e /= 2),
+                m_btnHalfN = m_btnHalf.map(e => -e),
+                m_cMod = 0x444444,
+                m_cSell = 0x9b1111,
+                m_cUpg = 0x10a524,
+                m_txtStyle = {
                     fontFamily: "ISO",
                     fontSize: font_size_detail,
                     stroke: "white",
                     strokeThickness: 1,
                     fill: "white",
                     align: "center"
-                  };
+                };
 
             // set button boxes
             m_towerMod.beginFill(m_cMod).drawRect(...m_btnHalfN, ...m_btndim).endFill();
@@ -592,8 +626,8 @@ class Game{
 
             // set button texts
             const m_towerModTxt = new TextObject("🛠️ MOD", m_txtStyle),
-                  m_towerSellTxt = new TextObject("SELL", m_txtStyle),
-                  m_towerUpgTxt = new TextObject("↑", m_txtStyle);
+                m_towerSellTxt = new TextObject("SELL", m_txtStyle),
+                m_towerUpgTxt = new TextObject("↑", m_txtStyle);
 
             m_towerModTxt.anchor.set(0.5, 0.5);
             m_towerSellTxt.anchor.set(0.5, 0.5);
@@ -630,61 +664,64 @@ class Game{
         // MOD Interface (it's so big, that's what she said)
         {
             const menu_padding = 20,
-                  top_section = 200,
-                  st_style = {
+                top_section = 200,
+                st_style = {
                     fontFamily: "ISO",
                     fontSize: 15,
                     stroke: "white",
                     strokeThickness: 1,
                     fill: "white",
                     align: "center"
-                  }
+                }
 
             const mod_menu = new GameObject("imod_menu"),
-                  exit = new TextObject("❌", {}),
-                  type = new GameObject("imod_typeCont"),
-                  statCont = new GameObject("imod_statCont"),
+                exit = new TextObject("❌", {}),
+                type = new GameObject("imod_typeCont"),
+                statCont = new GameObject("imod_statCont"),
 
-                  mod_cont = new GameObject("imod_modCont"),
+                mod_cont = new GameObject("imod_modCont"),
 
-                  equipped = new GameObject("imod_equipped"),
-                  avail = new GameObject("imod_avail"),
+                equipped = new GameObject("imod_equipped"),
+                avail = new GameObject("imod_avail"),
 
-                  av_prev = new GameObject("imod_avPrev"),
-                  av_next = new GameObject("imod_avNext"),
-                  av_prevTxt = new TextObject("▲", st_style),
-                  av_nextTxt = new TextObject("▼", st_style),
+                drag_identifier = new GameObject("imod_dragID"),
 
-                  eq_prev = new GameObject("imod_eqPrev"),
-                  eq_next = new GameObject("imod_eqNext"),
-                  eq_prevTxt = new TextObject("▲", st_style),
-                  eq_nextTxt = new TextObject("▼", st_style),
+                av_prev = new GameObject("imod_avPrev"),
+                av_next = new GameObject("imod_avNext"),
+                av_prevTxt = new TextObject("▲", st_style),
+                av_nextTxt = new TextObject("▼", st_style),
 
-                  st_atk = new TextObject("ATK ", st_style),
-                  st_spd = new TextObject("SPD ", st_style),
-                  st_rng = new TextObject("RNG ", st_style),
-                  st_trg = new TextObject("TRG ", st_style),
-                  st_pen = new TextObject("PEN ", st_style),
-                  st_cap = new TextObject("CAP ", st_style),
-                  st_lvl = new TextObject("LVL ", {
+                eq_prev = new GameObject("imod_eqPrev"),
+                eq_next = new GameObject("imod_eqNext"),
+                eq_prevTxt = new TextObject("▲", st_style),
+                eq_nextTxt = new TextObject("▼", st_style),
+
+                st_atk = new TextObject("ATK ", st_style),
+                st_spd = new TextObject("SPD ", st_style),
+                st_rng = new TextObject("RNG ", st_style),
+                st_trg = new TextObject("TRG ", st_style),
+                st_pen = new TextObject("PEN ", st_style),
+                st_cap = new TextObject("CAP ", st_style),
+                st_mod = new TextObject("MOD ", st_style),
+                st_lvl = new TextObject("LVL ", {
                     fontFamily: "ISO",
                     fontSize: 20,
                     stroke: "white",
                     strokeThickness: 1,
                     fill: "white",
                     align: "center"
-                  });
+                });
 
             mod_menu._igroup = "tower_management";
 
             // TODO: PIXI EXCLUSIVE DRAW
             mod_menu.beginFill(0x333333, 0.9)
-            .drawRect(
-                menu_padding, menu_padding,
-                this.width - menu_padding * 2, this.height - menu_padding * 2
-            ).beginFill();
+                .drawRect(
+                    menu_padding, menu_padding,
+                    this.width - menu_padding * 2, this.height - menu_padding * 2
+                ).beginFill();
 
-            
+
             // Position elements
             exit.anchor.set(0.5, 0.5);
             exit.position.set(...Array(2).fill(menu_padding * 2));
@@ -708,16 +745,17 @@ class Game{
 
             // create mod layout
             const mod_cont_dim = [
-                this.width / 2 - menu_padding * 2, 
-                mod_menu.height - (top_section + menu_padding * 3.5)
-            ], mod_nav_dim = [mod_cont_dim[0], 50],
-               mod_list_dim = [mod_cont_dim[0], mod_cont_dim[1] - mod_nav_dim[1] ]
+                    this.width / 2 - menu_padding * 2,
+                    mod_menu.height - (top_section + menu_padding * 3.5)
+                ],
+                mod_nav_dim = [mod_cont_dim[0], 50],
+                mod_list_dim = [mod_cont_dim[0], mod_cont_dim[1] - mod_nav_dim[1]]
 
             console.log(mod_cont_dim);
 
             mod_cont.beginFill(0x333333)
-            .drawRect(0, 0, mod_cont_dim[0] + mod_nav_dim[0], mod_cont_dim[1] + mod_nav_dim[1])
-            .endFill();
+                .drawRect(0, 0, mod_cont_dim[0] + mod_nav_dim[0], mod_cont_dim[1] + mod_nav_dim[1])
+                .endFill();
 
             mod_cont.position.y = top_section + menu_padding;
             mod_cont.position.x = menu_padding * 2;
@@ -727,10 +765,18 @@ class Game{
             avail.position.y = mod_nav_dim[1];
             avail.position.x = mod_cont.width / 2;
 
+            // special properties
+            equipped.sortableChildren = true;
+            avail.sortableChildren = true;
+
             st_cap.anchor.set(0.5, 0.5);
             st_cap.position.x = this.width / 4 - menu_padding;
             st_cap.position.y = -menu_padding / 1.5;
-            
+
+            st_mod.anchor.set(0.5, 0.5);
+            st_mod.x = st_cap.x + mod_cont.width / 2;
+            st_mod.y = st_cap.y;
+
 
             av_prev.beginFill(0x222222).drawRect(0, 0, ...mod_nav_dim).endFill();
             av_prev.beginFill(0x383838).drawRect(3, 3, ...mod_nav_dim.map(e => e -= 6));
@@ -751,13 +797,13 @@ class Game{
             eq_next.y += mod_cont.height - mod_nav_dim[1];
             av_prev.x += mod_cont.width / 2;
             av_next.position.set(av_prev.x, eq_next.y);
-            
+
 
             av_prev.addChild(av_prevTxt);
             av_next.addChild(av_nextTxt);
             eq_prev.addChild(eq_prevTxt);
             eq_next.addChild(eq_nextTxt);
-            
+
             av_prevTxt.anchor.set(0.5, 0.5);
             av_nextTxt.anchor.set(0.5, 0.5);
             eq_prevTxt.anchor.set(0.5, 0.5);
@@ -767,6 +813,18 @@ class Game{
             av_nextTxt.position.set(...av_next.center);
             eq_prevTxt.position.set(...eq_prev.center);
             eq_nextTxt.position.set(...eq_next.center);
+
+            const d_i_h = 2;
+
+            drag_identifier.y = equipped.y;
+            drag_identifier.beginFill(0xff7b00, 0).drawRect(-10, -d_i_h/2, equipped.width + 20, d_i_h).endFill();
+
+            const drag_mark = new TextObject("►", st_style);
+            drag_mark.anchor.set(0.5, 0.5);
+            drag_mark.x -= drag_mark.width / 2 - 5;
+            drag_mark.tint = 0xff7b00;
+
+            drag_identifier.addChild(drag_mark);
 
             // mod nav events
             av_prev.eventMode = "static";
@@ -782,13 +840,13 @@ class Game{
             av_prev.onpointertap = () => {
                 const m = this.__mod_menu;
                 m.mod_avail_page--;
-                if(m.mod_avail_page < 0) m.mod_avail_page = 0;
+                if (m.mod_avail_page < 0) m.mod_avail_page = 0;
                 this.updateModAvailable();
             }
             av_next.onpointertap = () => {
                 const m = this.__mod_menu;
                 m.mod_avail_page++;
-                if(m.mod_avail_page * Game.g.max_mod_per_page > this.mods.length - 1) m.mod_avail_page--;
+                if (m.mod_avail_page * Game.g.max_mod_per_page > this.mods.length - 1) m.mod_avail_page--;
                 this.updateModAvailable();
             }
 
@@ -798,7 +856,7 @@ class Game{
 
                 const st = this.selected_tower;
 
-                if(m.mod_equip_page < 0) m.mod_equip_page = 0;
+                if (m.mod_equip_page < 0) m.mod_equip_page = 0;
                 this.updateModEquipped(st);
             }
             eq_next.onpointertap = () => {
@@ -808,7 +866,7 @@ class Game{
                 const st = this.selected_tower;
                 console.log(m.mod_equip_page * Game.g.max_mod_per_page, st.mod_length);
 
-                if(m.mod_equip_page * Game.g.max_mod_per_page > st.mod_length - 1) m.mod_equip_page--;
+                if (m.mod_equip_page * Game.g.max_mod_per_page > st.mod_length - 1) m.mod_equip_page--;
                 this.updateModEquipped(st);
             }
 
@@ -830,7 +888,8 @@ class Game{
                     trg: st_trg,
                     pen: st_pen,
                     lvl: st_lvl,
-                    cap: st_cap
+                    cap: st_cap,
+                    mod: st_mod
                 },
                 mod_equip: equipped,
                 mod_avail: avail,
@@ -847,15 +906,21 @@ class Game{
 
                 style: {
                     md_cont_h: menu_padding
-                }
+                },
+
+                drag_cont_ident: drag_identifier
             }
 
             Object.assign(this.__mod_menu, save_pref);
 
-            mod_cont.addChild(st_cap, av_prev, av_next, eq_prev, eq_next, equipped, avail);
+            drag_identifier.zIndex = 10;
+            equipped.addChild(drag_identifier);
+            mod_cont.addChild(st_cap, st_mod, av_prev, av_next, eq_prev, eq_next, equipped, avail);
+            
             statCont.addChild(st_lvl, st_atk, st_spd, st_rng, st_trg, st_pen);
             mod_menu.addChild(exit, type, statCont, mod_cont);
 
+            drag_identifier.hide();
             mod_menu.hide();
             this._addInterface(mod_menu, this.menu_game);
         }
@@ -883,11 +948,15 @@ class Game{
 
         // pagination feature
         mod_equip_page: 0,
-        mod_avail_page: 0
+        mod_avail_page: 0,
+
+        // dragging feature
+        drag_cont_dims: [], // contains arrays with [minx, maxx, y]
+        drag_cont_ident: null
     }
 
     // base on selected tower
-    setModMenuElements(){
+    setModMenuElements() {
         // get selected tower
         const t = this.selected_tower;
 
@@ -898,9 +967,9 @@ class Game{
 
         // Create type graphic
         const g = new GameObject("imod_typeGraphic"),
-              g_type = t.type == "b" ? "CIRCLE" : "REG",
-              side = t.type == "a" ? 4 : t.type == "b" ? "b" :
-                     t.type == "c" ? 5 : 6;
+            g_type = t.type == "b" ? "CIRCLE" : "REG",
+            side = t.type == "a" ? 4 : t.type == "b" ? "b" :
+            t.type == "c" ? 5 : 6;
 
         Geometry.TOWER[g_type].bind(g)(50, side, t.type);
 
@@ -910,10 +979,12 @@ class Game{
         type.addChild(g);
     }
 
-    updateModElementStat(t){
-        
+    updateModElementStat(t) {
+
         // apply stats and type
-        const {stats: stat} = this.__mod_menu;
+        const {
+            stats: stat
+        } = this.__mod_menu;
 
         stat.atk.text = `ATK - ${t.atk.toFixed(2)}`;
         stat.spd.text = `SPD - ${t.spd.toFixed(2)}`;
@@ -922,37 +993,53 @@ class Game{
         stat.pen.text = `PEN - ${t.pen.toFixed(2)}`;
         stat.lvl.text = `LVL ${t.lvl}`;
         stat.cap.text = `CAP ${t.mod_length}/${t.cap}`;
+        stat.mod.text = `MOD ${this.mods.length}/${t.cap}`;
     }
 
-    updateModEquipped(t){
-        const {mod_equip: eq, style: s, mod_equip_page: count, btn}  = this.__mod_menu,
-        max = Game.g.max_mod_per_page, length = t.mod_length;
+    updateModEquipped(t) {
+
+        if (t.mod_length - 1 < this.__mod_menu.mod_equip_page * Game.g.max_mod_per_page) {
+            this.__mod_menu.mod_equip_page--;
+            if (this.__mod_menu.mod_equip_page <= 0) this.__mod_menu.mod_equip_page = 0;
+        }
+
+        const {
+            mod_equip: eq,
+            style: s,
+            mod_equip_page: count,
+            btn,
+            drag_cont_dims: dg,
+            drag_cont_ident: di
+        } = this.__mod_menu,
+            max = Game.g.max_mod_per_page, length = t.mod_length, eq_gl = {};
+
+        // add first drag container
+        eq.getGlobalPosition(eq_gl);
+        dg.length = 0;
+        dg.push([eq_gl.x, eq_gl.x + eq.width, eq_gl.y, 0]);
 
         eq.removeChildren();
+        eq.addChild(di);
 
         const ms = t.modAsArray;
 
-        if(length < max * count){
-            count = 0;
-            this.__mod_menu.mod_equip_page = count;
-        }
-
         ms.forEach((e, i) => {
-            if(!Util.isInBound(count * max, (count + 1) * max, i)) return;
-            const m = new GameObject("mequipped_cont"),
-                  m_h = eq.height / Game.g.max_mod_per_page, 
-                  m_b = 3;
+            if (!Util.isInBound(count * max, (count + 1) * max, i + 1, 3)) return;
 
-                  i %= max;
+            const m = new GameObject("mequipped_cont"),
+                m_h = eq.height / Game.g.max_mod_per_page,
+                m_b = 3;
+
+            i %= max;
 
             // TODO: PIXI EXLUSIVE DRAW
             m.beginFill(0x0c9623)
-            .drawRect(0, 0, this.width / 2 - s.md_cont_h * 2, m_h)
-            .endFill();
+                .drawRect(0, 0, this.width / 2 - s.md_cont_h * 2, m_h)
+                .endFill();
 
             m.beginFill(0x086017)
-            .drawRect(m_b, m_b, this.width / 2 - s.md_cont_h * 2 - m_b * 2, m_h - m_b*2)
-            .endFill();
+                .drawRect(m_b, m_b, this.width / 2 - s.md_cont_h * 2 - m_b * 2, m_h - m_b * 2)
+                .endFill();
 
             // TEXT
             const txt = new TextObject(e.label, {
@@ -968,59 +1055,158 @@ class Game{
             txt.position.set(...m.center);
 
             m.addChild(txt);
-            m.position.y = i * m_h; 
+            m.position.y = i * m_h;
+            m._of = {
+                x: m.x,
+                y: m.y
+            }; // for repositioning later
 
             // add event to remove
             m.eventMode = "static";
             m.onpointertap = () => {
+                if(m.wasDragging) return;
+
+                if (m.wasDragging) {
+
+                    // For custom index mod addition
+                    m.wasDragging = false;
+
+                    return;
+                }
+
                 this.mods.push(e);
                 t.delMod(e);
                 e.mod = null; // remove mod inside
             }
+            
+            m.onpointerdown = (ev) => {
+                m.clicked = true;
+
+                m.zIndex++;
+                // pointer offset to container coordinate itself when starting dragging
+                m._dragOffset = {
+                    x: ev.client.x - m._gof.x,
+                    y: ev.client.y - m._gof.y
+                };
+
+            }
+            m.onpointermove = (ev) => {
+                if (!m.clicked) return;
+                m.dragging = true;
+
+                const offset = m._gof;
+
+                m.x = ev.client.x - offset.x + m._of.x - m._dragOffset.x;
+                m.y = ev.client.y - offset.y + m._of.y - m._dragOffset.y;
+
+                const g = {};
+                m.getGlobalPosition(g);
+
+                let hasContainer = false;
+                for (const cont of dg) {
+                    // check if current dragging is within y
+                    if (!Util.isInBound(g.y, g.y + m_h, cont[2])) continue;
+
+                    hasContainer = true;
+
+                    // if all check, set safe release to true and put the index
+                    di.show();
+                    m.target_release = true;
+                    m.target_index = count * max + cont[3];
+                    di.y = cont[3] * m_h;
+                }
+
+                if (!hasContainer) m.target_release = false;
+            }
+
+            const _finishDragging = () => {
+                if (!m.dragging) return;
+                m.zIndex--;
+
+                if (m.target_release) {
+                    const st = this.selected_tower;
+                    
+                    st.addModAt(e.clone, m.target_index, false);
+                    st.delMod(e);
+                } else {
+                    // go back to original x and y 
+                    m.x = m._of.x;
+                    m.y = m._of.y;
+                }
+
+
+                di.hide();
+                m.clicked = false;
+                m.wasDragging = true;
+                m.dragging = false;
+            }
+
+            m.onpointerup = _finishDragging;
+            m.onpointerleave = _finishDragging;
+
+            // add drag containers
+            const last = [...dg.at(-1)];
+            last[2] += m_h;
+            last[3]++;
+            dg.push(last);
 
             eq.addChild(m);
+            m._gof = {
+                x: null,
+                y: null
+            };
+            m.getGlobalPosition(m._gof);
         })
 
         // change stylings for mod equip navigation buttons
-        if(count <= 0) btn.eq_prev.tint = 0x888888;
+        if (count <= 0) btn.eq_prev.tint = 0x888888;
         else btn.eq_prev.tint = 0xffffff;
 
-        if((count + 1) * max > length - 1) btn.eq_next.tint = 0x888888;
+        if ((count + 1) * max > length - 1) btn.eq_next.tint = 0x888888;
         else btn.eq_next.tint = 0xffffff;
     }
 
     // available
-    updateModAvailable(){
-        
-        if(this.mods.length - 1 < this.__mod_menu.mod_avail_page * Game.g.max_mod_per_page){
+    updateModAvailable() {
+
+        if (this.mods.length - 1 < this.__mod_menu.mod_avail_page * Game.g.max_mod_per_page) {
             this.__mod_menu.mod_avail_page--;
-            if(this.__mod_menu.mod_avail_page <= 0) this.__mod_menu.mod_avail_page = 0;
+            if (this.__mod_menu.mod_avail_page <= 0) this.__mod_menu.mod_avail_page = 0;
         }
 
-        const {mod_avail: av, style: s, mod_avail_page: count, btn} = this.__mod_menu,
-              max = Game.g.max_mod_per_page, length = this.mods.length;
+        const {
+            mod_avail: av,
+            mod_equip: eq,
+            style: s,
+            mod_avail_page: count,
+            btn,
+            drag_cont_dims: dg,
+            mod_equip_page: count_equip,
+            drag_cont_ident: di
+        } = this.__mod_menu,
+            max = Game.g.max_mod_per_page, length = this.mods.length;
 
         av.removeChildren();
 
 
         this.mods.forEach((e, i) => {
-            if(!Util.isInBound(count * max, (count + 1) * max, i)) return;
+            if (!Util.isInBound(count * max, (count + 1) * max, i + 1, 3)) return;
 
             const m = new GameObject("mavail_cont"),
-                  m_h = av.height / max, 
-                  m_b = 3;
+                m_h = av.height / max,
+                m_b = 3;
 
             i %= max;
 
 
             // TODO: PIXI EXLUSIVE DRAW
             m.beginFill(0x333333)
-            .drawRect(0, 0, this.width / 2 - s.md_cont_h * 2, m_h)
-            .endFill();
+                .drawRect(0, 0, this.width / 2 - s.md_cont_h * 2, m_h)
+                .endFill();
 
             m.beginFill(0x525252)
-            .drawRect(m_b, m_b,  this.width / 2 - s.md_cont_h * 2 - m_b * 2, m_h - m_b*2)
-            .endFill();
+                .drawRect(m_b, m_b, this.width / 2 - s.md_cont_h * 2 - m_b * 2, m_h - m_b * 2)
+                .endFill();
 
             // TEXT
             const txt = new TextObject(e.label, {
@@ -1035,7 +1221,11 @@ class Game{
             txt.anchor.set(0.5, 0.5);
             txt.position.set(...m.center);
 
-            m.position.y = i * m_h; 
+            m.position.y = i * m_h;
+            m._of = {
+                x: m.x,
+                y: m.y
+            }; // for repositioning later
 
             m.addChild(txt);
 
@@ -1043,27 +1233,107 @@ class Game{
             m.eventMode = "static";
             m.onpointertap = () => {
 
+                // if pointer is dragging then just don't click it
+                if (m.dragging) return;
+
                 // add mod to the tower, unless if it has full mod capacity
                 const st = this.selected_tower;
 
-                console.log(st.cap, st.mod_length);
+                if (st.cap <= st.mod_length) return;
 
-                if(st.cap <= st.mod_length) return;
+                if (m.wasDragging) {
+                    // For custom index mod addition
+                    m.wasDragging = false;
+                    return;
+                }
 
                 const i = this.mods.findIndex(md => md.id == e.id),
-                      tmod = this.mods.splice(i, 1)[0];
+                    tmod = this.mods.splice(i, 1)[0];
 
                 st.addMod(tmod);
             }
+            m.onpointerdown = (ev) => {
+                m.clicked = true;
+
+                // pointer offset to container coordinate itself when starting dragging
+                m._dragOffset = {
+                    x: ev.client.x - m._gof.x,
+                    y: ev.client.y - m._gof.y
+                };
+
+                m.zIndex++;
+
+            }
+            m.onpointermove = (ev) => {
+                if (!m.clicked) return;
+                m.dragging = true;
+
+                const offset = m._gof;
+
+                m.x = ev.client.x - offset.x + m._of.x - m._dragOffset.x;
+                m.y = ev.client.y - offset.y + m._of.y - m._dragOffset.y;
+
+                const g = {};
+                m.getGlobalPosition(g);
+
+                let hasContainer = false;
+                for (const cont of dg) {
+                    // check if current dragging is within y
+                    if (!Util.isInBound(g.y, g.y + m_h, cont[2])) continue;
+
+                    hasContainer = true;
+
+                    // if all check, set safe release to true and put the index
+                    di.show();
+                    m.target_release = true;
+                    m.target_index = count_equip * max + cont[3];
+                    di.y = cont[3] * m_h;
+                }
+
+                if (!hasContainer) m.target_release = false;
+            }
+
+            const _finishDragging = () => {
+                if (!m.dragging) return;
+
+                m.zIndex--;
+
+                if (m.target_release) {
+                    const st = this.selected_tower;
+
+                    const i = this.mods.findIndex(md => md.id == e.id),
+                        tmod = this.mods.splice(i, 1)[0];
+
+                    st.addModAt(tmod, m.target_index);
+                } else {
+                    // go back to original x and y 
+                    m.x = m._of.x;
+                    m.y = m._of.y;
+                }
+
+
+                m.clicked = false;
+                m.wasDragging = true;
+                m.dragging = false;
+                di.hide();
+            }
+
+            m.onpointerup = _finishDragging;
+            m.onpointerleave = _finishDragging;
 
             av.addChild(m);
+            m._gof = {
+                x: null,
+                y: null
+            };
+            m.getGlobalPosition(m._gof);
         })
 
         // change stylings for mod equip navigation buttons
-        if(count <= 0) btn.av_prev.tint = 0x888888;
+        if (count <= 0) btn.av_prev.tint = 0x888888;
         else btn.av_prev.tint = 0xffffff;
 
-        if((count + 1) * max > length - 1) btn.av_next.tint = 0x888888;
+        if ((count + 1) * max > length - 1) btn.av_next.tint = 0x888888;
         else btn.av_next.tint = 0xffffff;
     }
 
@@ -1074,39 +1344,39 @@ class Game{
     wct = null; // time countdown for the wave to begin spawning
     enemy_queue; // enemy spawn queues
 
-    get wave_count(){
+    get wave_count() {
         return this.wc;
     }
 
-    set wave_count(val){
+    set wave_count(val) {
         this.wc = val;
         // modify text object content here
 
         this.__wave_count_object.text = `WAVE ${val}`;
     }
 
-    get wave_countdown(){
+    get wave_countdown() {
         return this.wct;
     }
 
-    set wave_countdown(val){
+    set wave_countdown(val) {
         this.wct = val;
 
-        if(!this.wave) return;
+        if (!this.wave) return;
         // change object here
         const owct = this.wave.oleft,
-              i_wave = this.get_i("iwave_ctCont");
+            i_wave = this.get_i("iwave_ctCont");
         i_wave.getChildAt(0).scale.x = val / owct;
 
         i_wave.getChildAt(1).text = `SKIP ${Math.floor(this.wave.currentSkipValue)}🟡`;
 
-        if(val <= 0) i_wave.hide();
+        if (val <= 0) i_wave.hide();
         else i_wave.show();
     }
 
     test = null;
 
-    _start(){
+    _start() {
         const defs = Game.defaults;
 
         // Reset values
@@ -1115,7 +1385,11 @@ class Game{
             this.health = defs.health;
 
             // DEV: Add mods
-            const testMod = new Mod({prop: "atk", mode: "+", value: 2});
+            const testMod = new Mod({
+                prop: "atk",
+                mode: "+",
+                value: 2
+            });
 
             this.mods.push(
                 testMod.clone,
@@ -1127,6 +1401,10 @@ class Game{
                 testMod.clone.set("prop", "trg").set("value", 1),
                 testMod.clone.set("prop", "rng").set("value", 0.5),
                 testMod.clone.set("mode", "*").set("value", 0.2),
+                testMod.clone.set("prop", "trg").set("value", 1),
+                testMod.clone.set("prop", "trg").set("value", 1),
+                testMod.clone.set("prop", "rng").set("value", 0.5),
+                testMod.clone.set("mode", "*").set("value", 0.2),
             )
 
             this.showMenu("menu_mapPreload");
@@ -1134,7 +1412,7 @@ class Game{
             // Generate Map
             this.map.removeChildren();
             let gen_map = Map.gen(defs.mapCols, defs.mapRows);
-            while(gen_map.path_length < defs.minPath) gen_map = Map.gen(defs.mapCols, defs.mapRows);
+            while (gen_map.path_length < defs.minPath) gen_map = Map.gen(defs.mapCols, defs.mapRows);
             this.map.setFromAscii(gen_map.ascii, gen_map.char_map);
 
 
@@ -1143,7 +1421,7 @@ class Game{
                 this.damage(obj.dmg);
             }
         }
-        
+
         // Show Game Menu
         this.showMenu("menu_Game");
 
@@ -1151,18 +1429,18 @@ class Game{
         // Initialize First Wave
         const enemyWave = Wave.getWave(1);
         this.wave = new Wave({
-            left: defs.first_wave_time, 
-            queue: enemyWave, 
+            left: defs.first_wave_time,
+            queue: enemyWave,
             skipValue: 20,
             game: this,
         })
-        
+
         // Start Loop
         Engine.addEvent("tick", this._loop, this);
         this._tickTime = 0;
     }
 
-    _waveDone(){
+    _waveDone() {
         // initiates creation of another wave, resetting wave timer
         console.log("Wave is done!");
         this.wave = null;
@@ -1170,8 +1448,8 @@ class Game{
         // immediately start another wave
         const enemyWave = Wave.getWave(this.wave_count + 1);
         this.wave = new Wave({
-            left: Game.defaults.first_wave_time + this.wave_count * 2, 
-            queue: enemyWave, 
+            left: Game.defaults.first_wave_time + this.wave_count * 2,
+            queue: enemyWave,
             skipValue: 20 + this.wave_count,
             game: this,
         })
@@ -1179,28 +1457,28 @@ class Game{
 
     _isOnPause = false;
 
-    set paused(val){
+    set paused(val) {
         this._isOnPause = val;
 
-        if(val) this.tl.pause();
+        if (val) this.tl.pause();
         else this.tl.resume();
     }
 
-    get paused(){
+    get paused() {
         return this._isOnPause;
     }
 
     // Loop (Add this to engine tick event)
     // Only handle game events, not rendering, as the engine does that
-    _loop(delta){
-        if(this.paused) return;
+    _loop(delta) {
+        if (this.paused) return;
 
         // console.log(delta * 1000);
         delta *= this.speed_mult || 1;
         this.tl.timeScale(this.speed_mult || 1);
 
         // get on countdown wave to reduce time then start spawning
-        if(this.wave) this.wave_countdown = this.wave.reduce(delta);
+        if (this.wave) this.wave_countdown = this.wave.reduce(delta);
 
         // get all towers to start shootin
         this.towers.forEach(t => {
@@ -1213,27 +1491,27 @@ class Game{
         })
     }
 
-    
 
-    _stop(){
+
+    _stop() {
         Engine.removeEvent("tick", this._loop);
     }
 
-    
+
     // Game related methods
 
-    _addEnemy(...objs){
+    _addEnemy(...objs) {
         objs.forEach(o => o.game = this);
         this.enemy_plane.addChild(...objs);
     }
 
     t_money = 0;
 
-    get money(){
+    get money() {
         return this.t_money;
     }
 
-    set money(val){
+    set money(val) {
         this.t_money = val;
 
         // change object
@@ -1242,17 +1520,17 @@ class Game{
         i_money.getChildAt(0).text = Math.floor(val);
     }
 
-    hasTowerAtBlock(x, y){
-        if(x instanceof Block) [x, y] = x.mapPos;
+    hasTowerAtBlock(x, y) {
+        if (x instanceof Block)[x, y] = x.mapPos;
         return this.towers.some(t => t.mx == x && t.my == y);
     }
 
-    buildTower(type){
+    buildTower(type) {
         let Tower = null;
 
         const selected = this.map.selectedBlock;
-        
-        switch(type){
+
+        switch (type) {
             case "A":
                 Tower = Quadra;
                 break;
@@ -1267,15 +1545,17 @@ class Game{
                 break;
         }
 
-        if(Tower == null) return;
+        if (Tower == null) return;
 
         // check for cost
-        if(this.money < Tower.cost){
+        if (this.money < Tower.cost) {
             // TODO: Add animation/indication that says no money
 
             return;
         }
-        const t = new Tower({block: selected});
+        const t = new Tower({
+            block: selected
+        });
 
         t.game = this;
         t._initTower();
@@ -1290,31 +1570,31 @@ class Game{
     }
 
     // used for homing purposes
-    addProjectile(Projectile, tower, target){
+    addProjectile(Projectile, tower, target) {
         // projectile here is the class
         const p = new Projectile(tower, target);
         p._initProjectile();
         this.projectile_plane.addChild(p);
     }
 
-    addEffect(effect){
+    addEffect(effect) {
         this.effects_plane.addChild(effect);
     }
 
-    upgradeTower(){
+    upgradeTower() {
         const t = this.selected_tower;
         this.hide_i("iman_towerCont");
-        if(t == null) return;
+        if (t == null) return;
         this.deselectAll();
-        if(t.upgrade_cost > this.money) return;
+        if (t.upgrade_cost > this.money) return;
         this.money -= t.upgrade_cost;
         t.lvl++;
 
     }
 
-    sellTower(){
+    sellTower() {
         const t = this.selected_tower;
-        if(t == null) return;
+        if (t == null) return;
 
         // remove all mods from the tower and turn it back in the mods array
         const t_mods = t.modAsArray;
@@ -1331,21 +1611,21 @@ class Game{
         this.deselectAll();
     }
 
-    damage(value){
+    damage(value) {
         this.health -= value;
     }
 
-    getEnemiesAtRange(minX, minY, maxX, maxY){
+    getEnemiesAtRange(minX, minY, maxX, maxY) {
         return this.entities.filter(e => {
             return Util.isInBound(minX, maxX, e.x) && Util.isInBound(minY, maxY, e.y);
         })
     }
 
-    addMoney(val){
+    addMoney(val) {
         this.money += val;
     }
 
-    addArcane(val){
+    addArcane(val) {
         // Permanent Upgrade Currency
     }
 }

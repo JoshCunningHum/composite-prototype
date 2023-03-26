@@ -7,7 +7,7 @@ import { Bullet, Field } from "./projectile.mjs";
 class Tower extends GameObject{
 
     static uf = 0.5; // upgrade factor
-    static base_cap = 0;
+    static base_cap = 20;
     
     /*
         Tower Damage Sequence:
@@ -195,6 +195,17 @@ class Tower extends GameObject{
             this.game.__mod_menu.mod_equip_page++;
         }
         this.refreshStats();
+    }
+
+    addModAt(mod, index, update_menu = true){
+        if(this._mod == null) this._mod = mod;
+        else if(index == 0){
+            const prevNode = this._mod;
+            this._mod = mod;
+            mod.mod = prevNode;
+        }else this._mod.addModAt(index, mod);
+        
+        if(update_menu) this.refreshStats();
     }
 
     delMod(mod){

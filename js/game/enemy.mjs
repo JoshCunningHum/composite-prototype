@@ -94,6 +94,9 @@ class Enemy extends GameObject{
     armor;
     m_reward;
 
+    // for statuses and different types of dmg
+    
+
     get health(){
         return this.hp;
     }
